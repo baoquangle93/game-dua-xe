@@ -7,14 +7,15 @@ export const ROAD_HALF = 8;    // nửa bề rộng mặt đường
 export const CURB_W = 1.2;     // bề rộng bó vỉa đỏ trắng
 export const WALL_DIST = 16;   // khoảng cách từ tim đường tới tường chắn
 
-// Các điểm điều khiển (x, z) của đường đua khép kín
+// Các điểm điều khiển (x, z) của đường đua khép kín:
+// dạng bầu dục với 2 đoạn thẳng dài, chỉ vài khúc cua thoải
 const CONTROL = [
-  [0, 0], [120, -10], [220, 40], [250, 140], [190, 220], [90, 200], [40, 260],
-  [-60, 280], [-170, 220], [-200, 110], [-130, 40], [-160, -60], [-90, -120], [0, -90],
+  [-60, 0], [200, 0], [290, 50], [300, 170], [230, 250],
+  [60, 260], [-100, 240], [-170, 160], [-160, 50],
 ];
 
 export function createTrack() {
-  const pts = CONTROL.map(([x, z]) => new THREE.Vector3(x * 1.3, 0, z * 1.3));
+  const pts = CONTROL.map(([x, z]) => new THREE.Vector3(x * 1.5, 0, z * 1.5));
   const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
   const samples = curve.getSpacedPoints(SAMPLES);
   samples.pop(); // điểm cuối trùng điểm đầu

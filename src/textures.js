@@ -64,6 +64,20 @@ export const makeBanner = (text) => canvasTex(1024, 128, (g, w, h) => {
   g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 8; g.fillText(text, w / 2, h / 2 + 2);
 }, false);
 
+// Ô tăng tốc: mũi tên vàng chạy về phía trước (có thể cuộn để tạo chuyển động)
+export const makeBoost = () => canvasTex(128, 128, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, w, 0);
+  gr.addColorStop(0, '#ff7b00'); gr.addColorStop(0.5, '#ffb000'); gr.addColorStop(1, '#ff7b00');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#fff7c2';
+  for (const y of [8, 72]) { // hình chữ V hướng xuống = hướng về phía trước
+    g.beginPath();
+    g.moveTo(14, y); g.lineTo(w / 2, y + 34); g.lineTo(w - 14, y);
+    g.lineTo(w - 14, y + 18); g.lineTo(w / 2, y + 52); g.lineTo(14, y + 18);
+    g.closePath(); g.fill();
+  }
+});
+
 export const makeSmoke = () => canvasTex(64, 64, (g, w, h) => {
   const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');

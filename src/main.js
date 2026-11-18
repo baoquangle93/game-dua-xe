@@ -6,6 +6,7 @@ import { buildWorld } from './scenery.js';
 import { createCar } from './car.js';
 import { input, setupInput } from './input.js';
 import { Smoke, EngineSound } from './effects.js';
+import { createObstacles } from './obstacles.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -33,6 +34,7 @@ const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 60
 const track = createTrack();
 buildTrackMeshes(scene, track);
 const world = buildWorld(scene, renderer, track);
+const obstacles = createObstacles(scene, track);
 const smoke = new Smoke(scene);
 const engine = new EngineSound();
 setupInput();
@@ -77,7 +79,7 @@ function placeOnGrid() {
     r.pos.set(p.x + n.x * lat, 0, p.z + n.z * lat);
     r.heading = Math.atan2(t.x, t.z);
     r.vel.set(0, 0, 0);
-    Object.assign(r, { steer: 0, idx, t: idx, progress: idx - N, speed: 0, lane: lat, lane0: lat, laneT: Math.random() * 6, push: 0, finishTime: null, fs: 0, slip: 0, wrong: 0 });
+    Object.assign(r, { steer: 0, idx, t: idx, progress: idx - N, speed: 0, lane: lat, lane0: lat, laneT: Math.random() * 6, push: 0, finishTime: null, fs: 0, slip: 0, wrong: 0, oil: 0, boost: 0 });
     applyVisuals(r, 0, false, false);
   });
 }
@@ -99,6 +101,7 @@ function startRace() {
   raceId++;
   placeOnGrid();
   smoke.clear();
+  obstacles.reset();
   state = 'countdown'; countdown = 3; raceTime = 0; goTimer = 0; finishShown = false;
   $('menu').classList.add('an-di');
   $('ket-qua').classList.add('an-di');
@@ -205,18 +208,22 @@ function updatePlayer(dt) {
   fs = r.vel.dot(fwd);
   const steerPower = Math.min(1, Math.abs(fs) / 10) * (1 - 0.45 * Math.min(1, Math.abs(fs) / MAX_SPEED));
   r.heading += r.steer * 1.9 * steerPower * Math.sign(fs) * (hb ? 1.4 : 1) * dt;
+  r.oil = Math.max(0, r.oil - dt);
+  r.boost = Math.max(0, r.boost - dt);
+  if (r.oil > 0) r.heading += Math.sin(raceTime * 11) * 0.9 * steerPower * dt; // dính dầu: xe lắc đuôi
   fwd.set(Math.sin(r.heading), 0, Math.cos(r.heading));
+  if (r.boost > 0 && drive) r.vel.addScaledVector(fwd, 38 * dt); // ô tăng tốc đẩy xe lên
 
-  // Độ bám đường: phần vận tốc trượt ngang bị triệt dần (phanh tay => trượt nhiều => drift)
+  // Độ bám đường: phần vận tốc trượt ngang bị triệt dần (phanh tay / vũng dầu => trượt nhiều)
   fs = r.vel.dot(fwd);
   lat.copy(r.vel).addScaledVector(fwd, -fs);
   r.slip = lat.length();
-  const grip = hb ? 1.6 : offroad ? 3.5 : 7;
+  const grip = r.oil > 0 ? 0.8 : hb ? 1.6 : offroad ? 3.5 : 7;
   r.vel.addScaledVector(lat, -Math.min(1, grip * dt));
 
   const drag = (offroad ? 1.3 : 0.18) + (thr ? 0 : 0.35) + (hb ? 0.5 : 0);
   r.vel.multiplyScalar(Math.max(0, 1 - drag * dt));
-  const maxS = offroad ? 30 : MAX_SPEED;
+  const maxS = offroad ? 30 : r.boost > 0 ? MAX_SPEED * 1.4 : MAX_SPEED;
   const sp = r.vel.length();
   if (sp > maxS) r.vel.setLength(sp + (maxS - sp) * Math.min(1, 3 * dt));
   if (r.finishTime != null) r.vel.multiplyScalar(1 - Math.min(1, 1.2 * dt)); // về đích thì tự giảm tốc
@@ -253,6 +260,8 @@ function updatePlayer(dt) {
     }
   }
 
+  hitObstacles(r);
+
   // Tiến độ vòng đua (cộng dồn để chạy ngược không gian lận được)
   let d = n2.idx - r.idx;
   if (d > track.N / 2) d -= track.N;
@@ -272,6 +281,62 @@ function updatePlayer(dt) {
   applyVisuals(r, dt, thr, brk);
   if (r.slip > 5 && Math.abs(r.fs) > 8) emitSmoke(r, '#e6e6e6');
   else if (offroad && Math.abs(r.fs) > 10) emitSmoke(r, '#b48c5c');
+  if (r.boost > 0) { // lửa phụt ra sau xe khi tăng tốc
+    wheelPos.set((Math.random() - 0.5) * 0.8, 0.55, -2.5);
+    r.car.group.localToWorld(wheelPos);
+    smoke.spawn(wheelPos, Math.random() < 0.5 ? '#ffb347' : '#ff6a00', 0.7);
+  }
+}
+
+// ---------- Va chạm với chướng ngại vật ----------
+// Thân xe được coi như 2 hình tròn (đầu xe và đuôi xe)
+function hitObstacles(r) {
+  const fx = Math.sin(r.heading), fz = Math.cos(r.heading);
+  for (const o of obstacles.items) {
+    const ox = o.pos.x - r.pos.x, oz = o.pos.z - r.pos.z, d2 = ox * ox + oz * oz;
+    if (d2 > 64) continue; // ở xa thì bỏ qua cho nhanh
+    if (o.type === 'oil') { if (d2 < o.r * o.r && r.oil < 1) r.oil = 1.4; continue; }
+    if (o.type === 'boost') { if (d2 < o.r * o.r && r.boost < 1.2) r.boost = 1.6; continue; }
+    if (o.type === 'cone' && o.knocked) continue;
+    for (const off of [1.3, -1.3]) {
+      let dx = r.pos.x + fx * off - o.pos.x, dz = r.pos.z + fz * off - o.pos.z;
+      const d = Math.hypot(dx, dz), min = 1.05 + o.r;
+      if (d >= min || d < 1e-4) continue;
+      dx /= d; dz /= d;
+      if (o.type === 'cone') { // tông đổ cọc tiêu: xe chậm lại một chút
+        obstacles.knock(o, r.vel, -dx, -dz);
+        r.vel.multiplyScalar(0.93);
+        shake = Math.min(0.5, shake + 0.12);
+        break;
+      }
+      // Thùng phuy: rất nặng, xe bị bật ra và mất nhiều tốc độ
+      r.pos.x += dx * (min - d); r.pos.z += dz * (min - d);
+      const vn = r.vel.x * dx + r.vel.z * dz;
+      if (vn < 0) {
+        r.vel.x -= dx * vn * 1.4; r.vel.z -= dz * vn * 1.4;
+        r.vel.multiplyScalar(0.6);
+        shake = Math.min(0.8, shake + Math.abs(vn) * 0.04);
+      }
+    }
+  }
+}
+
+// Xe máy tìm làn trống để lách qua chướng ngại vật phía trước
+function avoidLane(t, want) {
+  const N = track.N, ai = ((Math.floor(t) % N) + N) % N;
+  const blocks = [];
+  for (const z of obstacles.zones) {
+    const d0 = ((Math.floor(z.i0) - ai) % N + N) % N;
+    if (d0 < 60 || d0 > N - (z.i1 - z.i0) - 1) blocks.push(z);
+  }
+  if (!blocks.length) return { lane: want, avoiding: false };
+  const ok = (l) => blocks.every((z) => l < z.lat0 - 1.4 || l > z.lat1 + 1.4);
+  if (ok(want)) return { lane: want, avoiding: false };
+  let best = want, bestD = Infinity;
+  for (let l = -ROAD_HALF + 1.6; l <= ROAD_HALF - 1.6; l += 0.4) {
+    if (ok(l) && Math.abs(l - want) < bestD) { bestD = Math.abs(l - want); best = l; }
+  }
+  return { lane: best, avoiding: true };
 }
 
 // ---------- Xe đối thủ (máy điều khiển) ----------
@@ -296,12 +361,24 @@ function updateAI(a, dt) {
 
   a.laneT += dt * a.laneSpeed;
   a.push *= 1 - Math.min(1, dt * 1.5);
-  const laneTarget = clamp(a.lane0 * 0.6 + Math.sin(a.laneT) * 2.8 + a.push, -ROAD_HALF + 1.8, ROAD_HALF - 1.8);
-  a.lane += (laneTarget - a.lane) * Math.min(1, dt * 1.5);
+  const wantLane = clamp(a.lane0 * 0.6 + Math.sin(a.laneT) * 2.8 + a.push, -ROAD_HALF + 1.8, ROAD_HALF - 1.8);
+  const av = avoidLane(a.t, wantLane);
+  a.lane += (av.lane - a.lane) * Math.min(1, dt * (av.avoiding ? 4 : 1.5));
 
   const i = sampleAt(track, a.t, aiPoint);
   const n = track.normals[i];
-  const nx = aiPoint.x + n.x * a.lane, nz = aiPoint.z + n.z * a.lane;
+  let nx = aiPoint.x + n.x * a.lane, nz = aiPoint.z + n.z * a.lane;
+  // Chốt an toàn: nếu vẫn sát thùng phuy / cọc tiêu thì đẩy xe máy sang ngang
+  for (const o of obstacles.items) {
+    if ((o.type !== 'barrel' && o.type !== 'cone') || o.knocked) continue;
+    const ox = nx - o.pos.x, oz = nz - o.pos.z, d = Math.hypot(ox, oz), min = 1.9 + o.r;
+    if (d < min) {
+      const side = ox * n.x + oz * n.z >= 0 ? 1 : -1;
+      a.lane = clamp(a.lane + side * (min - d), -ROAD_HALF + 1, ROAD_HALF - 1);
+      nx = aiPoint.x + n.x * a.lane; nz = aiPoint.z + n.z * a.lane;
+      a.speed *= 0.995;
+    }
+  }
   const dx = nx - a.pos.x, dz = nz - a.pos.z;
   if (dx * dx + dz * dz > 1e-6) {
     const h = Math.atan2(dx, dz);
@@ -357,7 +434,7 @@ function updateCamera(dt) {
   }
   camera.lookAt(player.pos.x + camDir.x * 6, 1.3, player.pos.z + camDir.z * 6);
   const ratio = Math.min(1, Math.abs(player.fs) / MAX_SPEED);
-  camera.fov += (60 + ratio * 18 - camera.fov) * Math.min(1, dt * 3);
+  camera.fov += (60 + ratio * 18 + (player.boost > 0 ? 9 : 0) - camera.fov) * Math.min(1, dt * 3);
   camera.updateProjectionMatrix();
 }
 
@@ -381,7 +458,13 @@ let mmS = 1, mmOx = 0, mmOz = 0;
   g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 14; g.stroke();
   g.strokeStyle = '#2f3240'; g.lineWidth = 9; g.stroke();
   const s0 = track.samples[0];
-  g.fillStyle = '#ffd166'; g.fillRect(s0.x * mmS + mmOx - 5, s0.z * mmS + mmOz - 5, 10, 10);
+  g.fillStyle = '#ffffff'; g.fillRect(s0.x * mmS + mmOx - 6, s0.z * mmS + mmOz - 6, 12, 12);
+  // Chấm nhỏ đánh dấu chướng ngại vật: đỏ = thùng phuy, cam = cọc tiêu, tím = dầu, vàng = tăng tốc
+  const dotCol = { barrel: '#ff4d4d', cone: '#ff9f43', oil: '#9b5de5', boost: '#ffd166' };
+  for (const o of obstacles.items) {
+    g.fillStyle = dotCol[o.type];
+    g.beginPath(); g.arc(o.pos.x * mmS + mmOx, o.pos.z * mmS + mmOz, 3.5, 0, Math.PI * 2); g.fill();
+  }
 })();
 function drawMinimap() {
   mctx.clearRect(0, 0, MM, MM);
@@ -403,7 +486,11 @@ function updateHUD() {
   const kmh = Math.round(Math.abs(player.fs) * KMH);
   $('toc-do').textContent = kmh;
   $('thanh').style.width = Math.min(100, (kmh / (MAX_SPEED * KMH)) * 100) + '%';
-  $('canh-bao').textContent = player.wrong > 1 ? '⚠ SAI HƯỚNG!' : '';
+  const cb = $('canh-bao');
+  const [txt, color] = player.wrong > 1 ? ['⚠ SAI HƯỚNG!', '#ff4d6d']
+    : player.oil > 0 ? ['🛢 TRƠN TRƯỢT!', '#c77dff']
+    : player.boost > 0 ? ['⚡ TĂNG TỐC!', '#ffd166'] : ['', ''];
+  cb.textContent = txt; cb.style.color = color;
   drawMinimap();
 }
 
@@ -424,6 +511,7 @@ function update(dt) {
   for (const a of ais) updateAI(a, dt);
   separateAIs(dt);
   smoke.update(dt);
+  obstacles.update(dt);
   updateCamera(dt);
 
   world.sun.position.copy(player.pos).addScaledVector(world.sunDir, 160);
@@ -455,7 +543,7 @@ frame();
 
 // Cho phép kiểm tra trạng thái game từ công cụ phát triển của trình duyệt
 window.__game = {
-  get state() { return state; }, player, ais, track, startRace, toMenu,
+  get state() { return state; }, player, ais, track, obstacles, startRace, toMenu,
   // Chạy nhanh n bước (dùng khi kiểm thử tự động)
   step(n = 60, dt = 1 / 60, draw = true) { for (let i = 0; i < n; i++) update(dt); if (draw) render(); },
 };
