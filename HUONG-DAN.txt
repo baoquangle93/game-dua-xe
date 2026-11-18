@@ -1,0 +1,35 @@
+ĐƯỜNG ĐUA HOÀNG HÔN - HƯỚNG DẪN
+================================
+
+CHƠI TRÊN MẠNG
+- Mở link GitHub Pages của game (xem trong phần About của kho trên GitHub).
+
+CHẠY TRÊN MÁY (cần Node.js)
+1. Mở PowerShell trong thư mục 06-game-dua-xe.
+2. Lần đầu tiên chạy:   npm install
+3. Chạy game:           npm run dev
+4. Mở trình duyệt, vào địa chỉ:  http://localhost:5173
+5. Muốn tắt: quay lại PowerShell, nhấn Ctrl + C.
+
+Lưu ý: KHÔNG nhấp đúp file index.html để chơi được, vì game cần Vite chạy
+(npm run dev) mới mở được.
+
+CÁCH CHƠI
+- Bấm "BẮT ĐẦU ĐUA" (hoặc phím Enter), chờ đếm ngược 3-2-1.
+- Đua 3 vòng, cố về đích trước 3 xe đối thủ.
+- Ra khỏi mặt đường (lề cát) xe sẽ chậm lại; đâm tường xe bị nảy ra.
+- Thời gian tốt nhất được lưu làm kỷ lục.
+
+ĐIỀU KHIỂN
+- Mũi tên lên / W      : tăng ga
+- Mũi tên xuống / S    : phanh, giữ lâu để lùi
+- Mũi tên trái phải / A D : đánh lái
+- Space                : phanh tay (để drift khi vào cua)
+- M                    : bật / tắt âm thanh
+- Điện thoại: dùng 4 nút trên màn hình.
+
+CẬP NHẬT LÊN GITHUB SAU KHI SỬA
+  git add -A
+  git commit -m "Cap nhat game"
+  git push
+Khoảng 1-2 phút sau, GitHub tự build và cập nhật bản chơi trên mạng.

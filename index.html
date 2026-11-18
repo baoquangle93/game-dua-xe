@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Đường Đua Hoàng Hôn</title>
+  <meta name="description" content="Game đua xe 3D chạy trên trình duyệt">
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Bảng thông số khi đua -->
+  <div id="hud" class="an-di">
+    <div class="hud-tren">
+      <div class="o"><small>VÒNG</small><b id="vong">1/3</b></div>
+      <div class="o"><small>THỜI GIAN</small><b id="thoi-gian">0:00.00</b></div>
+      <div class="o"><small>HẠNG</small><b id="hang">4/4</b></div>
+    </div>
+    <canvas id="minimap"></canvas>
+    <button id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
+    <div id="dem-nguoc"></div>
+    <div id="canh-bao"></div>
+    <div id="dong-ho">
+      <div><b id="toc-do">0</b><small>km/h</small></div>
+      <div id="thanh-toc-do"><i id="thanh"></i></div>
+    </div>
+    <div id="cham">
+      <button data-key="left" aria-label="Rẽ trái">◀</button>
+      <button data-key="right" aria-label="Rẽ phải">▶</button>
+      <button data-key="down" aria-label="Phanh">⏬</button>
+      <button data-key="up" aria-label="Ga">⏫</button>
+    </div>
+  </div>
+
+  <!-- Màn hình bắt đầu -->
+  <div id="menu" class="man">
+    <div class="the">
+      <h1>ĐƯỜNG ĐUA<br>HOÀNG HÔN</h1>
+      <p>Vượt qua 3 đối thủ, hoàn thành <b>3 vòng</b> đua nhanh nhất có thể!</p>
+      <div class="phim">
+        <kbd>↑ / W</kbd><span>Tăng ga</span>
+        <kbd>↓ / S</kbd><span>Phanh / lùi</span>
+        <kbd>← → / A D</kbd><span>Đánh lái</span>
+        <kbd>Space</kbd><span>Phanh tay (drift)</span>
+        <kbd>M</kbd><span>Bật / tắt âm thanh</span>
+      </div>
+      <p class="nho">Điện thoại: dùng các nút trên màn hình</p>
+      <button class="nut" id="nut-bat-dau">BẮT ĐẦU ĐUA</button>
+      <p class="nho" id="ky-luc-menu"></p>
+    </div>
+  </div>
+
+  <!-- Màn hình kết quả -->
+  <div id="ket-qua" class="man an-di">
+    <div class="the">
+      <h1 id="kq-tieu-de">VỀ ĐÍCH!</h1>
+      <p class="lon" id="kq-hang"></p>
+      <p id="kq-thoi-gian"></p>
+      <p class="nho" id="kq-ky-luc"></p>
+      <button class="nut" id="nut-dua-lai">ĐUA LẠI</button>
+      <button class="nut phu" id="nut-menu">MENU</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
