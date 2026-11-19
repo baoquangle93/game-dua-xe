@@ -2,8 +2,10 @@
 import * as THREE from 'three';
 import './style.css';
 import { createTrack, buildTrackMeshes, nearest, sampleAt, heightAt, heightAtT, ROAD_HALF, CURB_W, WALL_DIST } from './track.js';
-import { buildWorld } from './scenery.js';
+import { buildWorld, exposureOf } from './scenery.js';
 import { createCar } from './car.js';
+import { createBike } from './bike.js';
+import { STAGES } from './stages.js';
 import { input, setupInput } from './input.js';
 import { Smoke, EngineSound } from './effects.js';
 import { createObstacles } from './obstacles.js';
@@ -22,25 +24,27 @@ const clamp = THREE.MathUtils.clamp;
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 // ---------- Cài đặt người chơi (lưu trong trình duyệt) ----------
-const settings = { doKho: 'vua', doHoa: 'tu-dong', hoTro: 'bat' };
+const settings = { doKho: 'vua', doHoa: 'tu-dong', hoTro: 'bat', chang: 'hoang-hon' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('dua-xe-cai-dat')) || {}); } catch (e) { /* bỏ qua */ }
 const saveSettings = () => { try { localStorage.setItem('dua-xe-cai-dat', JSON.stringify(settings)); } catch (e) { /* bỏ qua */ } };
+if (!STAGES[settings.chang]) settings.chang = 'hoang-hon';
+const stageId = settings.chang, stage = STAGES[stageId]; // chặng đang chơi
 const SKILL = { de: 0.78, vua: 0.88, kho: 0.98 }; // tốc độ xe máy theo độ khó
 
 // ---------- Khởi tạo đồ hoạ ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.55;
+renderer.toneMappingExposure = exposureOf(stage.theme);
 renderer.shadowMap.type = THREE.PCFShadowMap;
 $('app').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.5, 6000);
 
-const track = createTrack();
-buildTrackMeshes(scene, track);
-const world = buildWorld(scene, renderer, track);
-const obstacles = createObstacles(scene, track);
+const track = createTrack(stage);
+buildTrackMeshes(scene, track, stage.theme);
+const world = buildWorld(scene, renderer, track, stage);
+const obstacles = createObstacles(scene, track, stage.plan);
 const smoke = new Smoke(scene);
 const engine = new EngineSound();
 setupInput();
@@ -85,12 +89,14 @@ applyQuality(settings.doHoa === 'tu-dong' ? autoQuality() : settings.doHoa);
 const render = () => (useBloom && composer ? composer.render() : renderer.render(scene, camera));
 
 // ---------- Xe đua ----------
+// extra.helmet: có giá trị => đây là xe máy (màu mũ bảo hiểm của người lái)
 function makeRacer(color, extra = {}) {
-  const car = createCar(color);
+  const bike = extra.helmet != null;
+  const car = bike ? createBike(color, extra.helmet) : createCar(color);
   scene.add(car.group);
   return {
-    car, color: '#' + color.toString(16).padStart(6, '0'),
-    pos: new THREE.Vector3(), vel: new THREE.Vector3(), heading: 0, steer: 0, spin: 0, pitch: 0,
+    car, bike, rad: bike ? 0.9 : 1.7, color: '#' + color.toString(16).padStart(6, '0'),
+    pos: new THREE.Vector3(), vel: new THREE.Vector3(), heading: 0, steer: 0, spin: 0, pitch: 0, lean: 0,
     idx: 0, progress: 0, finishTime: null, fs: 0, slip: 0, wrong: 0, ...extra,
   };
 }
@@ -99,10 +105,12 @@ const ais = [
   makeRacer(0x1d8fe1, { skill: 0.97, laneSpeed: 0.35 }),
   makeRacer(0xf4c430, { skill: 1.0, laneSpeed: 0.27 }),
   makeRacer(0x2ec4b6, { skill: 1.03, laneSpeed: 0.31 }),
+  makeRacer(0xff7b00, { skill: 0.96, laneSpeed: 0.45, helmet: 0xffffff }), // xe máy cam
+  makeRacer(0x8e44ad, { skill: 1.0, laneSpeed: 0.4, helmet: 0xffd166 }),  // xe máy tím
 ];
 const racers = [player, ...ais];
 // Vị trí xuất phát: [lùi sau vạch bao nhiêu điểm, lệch ngang]
-const GRID = [[30, -3.5], [12, 3.5], [12, -3.5], [30, 3.5]];
+const GRID = [[30, -3.5], [12, 3.5], [12, -3.5], [30, 3.5], [21, 0], [39, 0]];
 
 function placeOnGrid() {
   const N = track.N;
@@ -114,7 +122,7 @@ function placeOnGrid() {
     r.vel.set(0, 0, 0);
     Object.assign(r, {
       steer: 0, idx, t: idx, progress: idx - N, speed: 0, lane: lat, lane0: lat, laneT: Math.random() * 6, push: 0,
-      finishTime: null, fs: 0, slip: 0, wrong: 0, oil: 0, boost: 0, y: r.pos.y, vy: 0, air: false, pitch: 0,
+      finishTime: null, fs: 0, slip: 0, wrong: 0, oil: 0, boost: 0, y: r.pos.y, vy: 0, air: false, pitch: 0, lean: 0, lastHeading: r.heading,
     });
     applyVisuals(r, 0, false, false);
   });
@@ -125,13 +133,14 @@ let state = 'menu';         // menu | countdown | race | done
 let countdown = 0, raceTime = 0, goTimer = 0, menuT = 0, shake = 0, raceId = 0;
 let muted = false, finishShown = false;
 let best = null;
-try { best = Number(localStorage.getItem('dua-xe-ky-luc')) || null; } catch (e) { /* trình duyệt chặn lưu */ }
+const BEST_KEY = settings.chang === 'hoang-hon' ? 'dua-xe-ky-luc' : 'dua-xe-ky-luc-' + settings.chang;
+try { best = Number(localStorage.getItem(BEST_KEY)) || null; } catch (e) { /* trình duyệt chặn lưu */ }
 
 const fmt = (t) => {
   const m = Math.floor(t / 60), s = t - m * 60;
   return `${m}:${s.toFixed(2).padStart(5, '0')}`;
 };
-function showBest() { $('ky-luc-menu').textContent = best ? 'Kỷ lục của bạn: ' + fmt(best) : ''; }
+function showBest() { $('ky-luc-menu').textContent = best ? 'Kỷ lục chặng ' + stage.name + ': ' + fmt(best) : ''; }
 
 function startRace() {
   raceId++;
@@ -173,6 +182,8 @@ document.querySelectorAll('.nhom[data-opt]').forEach((group) => {
   group.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
     settings[key] = b.dataset.v;
     saveSettings(); mark();
+    // Đổi chặng: tải lại trang để dựng đường đua và cảnh vật mới
+    if (key === 'chang' && b.dataset.v !== stageId) { $('nut-bat-dau').textContent = 'ĐANG TẢI CHẶNG...'; setTimeout(() => location.reload(), 30); }
     if (key === 'doHoa') applyQuality(b.dataset.v === 'tu-dong' ? autoQuality() : b.dataset.v);
   }));
   mark();
@@ -192,9 +203,9 @@ function showResults(id) {
   finishShown = true;
   const rank = playerRank(), t = player.finishTime;
   const newBest = best == null || t < best;
-  if (newBest) { best = t; try { localStorage.setItem('dua-xe-ky-luc', String(t)); } catch (e) { /* bỏ qua */ } }
+  if (newBest) { best = t; try { localStorage.setItem(BEST_KEY, String(t)); } catch (e) { /* bỏ qua */ } }
   $('kq-tieu-de').textContent = rank === 1 ? '🏆 CHIẾN THẮNG!' : 'VỀ ĐÍCH!';
-  $('kq-hang').textContent = `Hạng ${rank}/4`;
+  $('kq-hang').textContent = `Hạng ${rank}/${racers.length}`;
   $('kq-thoi-gian').textContent = 'Thời gian: ' + fmt(t) + (newBest ? ' — kỷ lục mới!' : '');
   $('kq-ky-luc').textContent = 'Kỷ lục: ' + fmt(best);
   $('ket-qua').classList.remove('an-di');
@@ -213,7 +224,14 @@ function applyVisuals(r, dt, thr, brk) {
   }
   const ratio = Math.min(1, Math.abs(r.fs) / MAX_SPEED);
   const k = Math.min(1, dt * 6);
-  c.chassis.rotation.z += (r.steer * ratio * 0.06 - c.chassis.rotation.z) * k;
+  if (r.bike) {
+    // Xe máy nghiêng vào trong khúc cua: góc nghiêng theo tốc độ x tốc độ quay đầu
+    const turn = dt > 0 ? wrapAngle(r.heading - (r.lastHeading ?? r.heading)) / dt : 0;
+    r.lastHeading = r.heading;
+    const want = clamp(-Math.atan((r.fs * turn) / 30), -0.7, 0.7);
+    r.lean += (want - r.lean) * Math.min(1, dt * 4);
+    c.chassis.rotation.z = r.lean;
+  } else c.chassis.rotation.z += (r.steer * ratio * 0.06 - c.chassis.rotation.z) * k;
   c.chassis.rotation.x += ((brk ? 0.025 : 0) - (thr ? 0.015 : 0) - c.chassis.rotation.x) * k;
   c.tailMat.emissiveIntensity = brk ? 4 : 1.2;
 }
@@ -312,8 +330,9 @@ function updatePlayer(dt) {
   for (const a of ais) {
     diff.subVectors(r.pos, a.pos); diff.y = 0;
     const d = diff.length();
-    if (d < 3.4 && d > 0.001 && Math.abs(r.pos.y - a.pos.y) < 1.5) {
-      diff.multiplyScalar((3.4 - d) / d);
+    const minD = r.rad + a.rad;
+    if (d < minD && d > 0.001 && Math.abs(r.pos.y - a.pos.y) < 1.5) {
+      diff.multiplyScalar((minD - d) / d);
       r.pos.addScaledVector(diff, 0.7);
       const side = (a.pos.x - r.pos.x) * nrm.x + (a.pos.z - r.pos.z) * nrm.z;
       a.push += Math.sign(side || 1) * 1.2;
@@ -514,7 +533,8 @@ function separateAIs(dt) {
   for (let i = 0; i < ais.length; i++) for (let j = i + 1; j < ais.length; j++) {
     const a = ais[i], b = ais[j];
     const dx = a.pos.x - b.pos.x, dz = a.pos.z - b.pos.z;
-    if (dx * dx + dz * dz < 16) {
+    const md = a.rad + b.rad + 0.6;
+    if (dx * dx + dz * dz < md * md) {
       const back = a.progress < b.progress ? a : b, front = back === a ? b : a;
       back.speed = Math.min(back.speed, front.speed * 0.98);
       back.push += (back.lane >= front.lane ? 1 : -1) * dt * 6;
@@ -586,7 +606,7 @@ function drawMinimap() {
   mctx.drawImage(mmBg, 0, 0);
   for (const r of [...ais, player]) {
     mctx.beginPath();
-    mctx.arc(r.pos.x * mmS + mmOx, r.pos.z * mmS + mmOz, r === player ? 11 : 8, 0, Math.PI * 2);
+    mctx.arc(r.pos.x * mmS + mmOx, r.pos.z * mmS + mmOz, r === player ? 11 : r.bike ? 6 : 8, 0, Math.PI * 2);
     mctx.fillStyle = r.color; mctx.fill();
     if (r === player) { mctx.lineWidth = 4; mctx.strokeStyle = '#fff'; mctx.stroke(); }
   }
@@ -597,7 +617,7 @@ function updateHUD() {
   const lap = clamp(Math.floor(player.progress / track.N) + 1, 1, LAPS);
   $('vong').textContent = `${lap}/${LAPS}`;
   $('thoi-gian').textContent = fmt(player.finishTime ?? raceTime);
-  $('hang').textContent = `${playerRank()}/4`;
+  $('hang').textContent = `${playerRank()}/${racers.length}`;
   const kmh = Math.round(Math.abs(player.fs) * KMH);
   $('toc-do').textContent = kmh;
   $('thanh').style.width = Math.min(100, (kmh / (MAX_SPEED * KMH)) * 100) + '%';
@@ -645,11 +665,13 @@ function simulate(dt) {
   obstacles.update(dt);
 }
 
-let hudT = 0;
+let hudT = 0, sceneT = 0;
 function present(dt) {
   updateCamera(dt);
   world.sun.position.copy(player.pos).addScaledVector(world.sunDir, 160);
   world.sun.target.position.copy(player.pos);
+  sceneT += dt;
+  world.update(dt, sceneT, player.pos, state === 'countdown' || (state === 'race' && raceTime < 4) || state === 'done');
   hudT -= dt;
   if (state !== 'menu' && hudT <= 0) { updateHUD(); hudT = 0.08; }
   const revving = (state === 'race' || state === 'countdown') && input.up;
@@ -677,6 +699,15 @@ addEventListener('resize', () => {
   composer?.setSize(innerWidth, innerHeight);
 });
 
+// Đèn pha xe người chơi khi đua đêm
+if (stage.theme === 'night') {
+  const head = new THREE.SpotLight(0xfff1d0, 120, 90, 0.5, 0.5, 1.3);
+  head.position.set(0, 1.0, 1.8);
+  head.target.position.set(0, 0, 25);
+  player.car.group.add(head, head.target);
+}
+$('ten-chang').textContent = stage.name;
+$('mo-ta-chang').textContent = stage.desc;
 placeOnGrid();
 showBest();
 frame();
@@ -684,6 +715,7 @@ frame();
 // Cho phép kiểm tra trạng thái game từ công cụ phát triển của trình duyệt
 window.__game = {
   get state() { return state; }, get quality() { return quality; }, player, ais, track, obstacles, settings, startRace, toMenu, applyQuality,
+  camera, scene, input, render,
   // Chạy nhanh n bước (dùng khi kiểm thử tự động)
   step(n = 60, dt = STEP, draw = true) { for (let i = 0; i < n; i++) simulate(dt); present(dt); if (draw) render(); },
 };

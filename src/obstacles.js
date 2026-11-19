@@ -3,32 +3,14 @@ import * as THREE from 'three';
 import { makeBoost, makeOil } from './textures.js';
 import { ribbon } from './track.js';
 
-// Vị trí đặt: i = điểm dọc đường (0..999, vạch xuất phát ở 0), lat = lệch ngang so với tim đường
-// (mặt đường rộng từ -8 tới 8). Tránh khu vực xuất phát.
-const PLAN = [
-  { i: 90, type: 'cones', lat: -3.5 },
-  { i: 150, type: 'boost', lat: 3 },
-  { i: 215, type: 'barrels', lat: 4.3 },
-  { i: 275, type: 'oil', lat: -3 },
-  { i: 340, type: 'cones', lat: 3.5 },
-  { i: 400, type: 'barrels', lat: -4.3 },
-  { i: 455, type: 'boost', lat: 0 },     // tăng tốc trước dốc nhảy 1
-  { i: 530, type: 'oil', lat: 3.5 },
-  { i: 590, type: 'barrels', lat: 0 },
-  { i: 650, type: 'cones', lat: -3.5 },
-  { i: 712, type: 'boost', lat: 0 },     // tăng tốc trước dốc nhảy 2
-  { i: 790, type: 'oil', lat: -4 },
-  { i: 845, type: 'barrels', lat: 4 },
-  { i: 900, type: 'cones', lat: 3 },
-];
-
 const barrelBody = new THREE.CylinderGeometry(0.75, 0.75, 1.5, 18).translate(0, 0.75, 0);
 const barrelRing = new THREE.CylinderGeometry(0.78, 0.78, 0.08, 18);
 const coneBody = new THREE.ConeGeometry(0.3, 0.85, 14).translate(0, 0.5, 0);
 const coneBand = new THREE.CylinderGeometry(0.19, 0.24, 0.14, 14).translate(0, 0.52, 0);
 const coneBase = new THREE.BoxGeometry(0.66, 0.07, 0.66).translate(0, 0.035, 0);
 
-export function createObstacles(scene, track) {
+// plan: danh sách chướng ngại vật của chặng (xem stages.js)
+export function createObstacles(scene, track, plan) {
   const { samples, normals, heights, segLen, N } = track;
   const items = []; // mỗi vật: { type, pos, r, ... }
   const zones = []; // vùng xe máy cần lách: { i0, i1, lat0, lat1 }
@@ -59,7 +41,7 @@ export function createObstacles(scene, track) {
   boostTex.repeat.set(1, 2);
   const boostMat = new THREE.MeshStandardMaterial({ map: boostTex, emissive: 0xffffff, emissiveMap: boostTex, emissiveIntensity: 0.8, roughness: 0.5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -6 });
 
-  PLAN.forEach((o, gi) => {
+  plan.forEach((o, gi) => {
     if (o.type === 'barrels') {
       // 3 thùng xếp hình tam giác
       for (const [ahead, side] of [[0, -0.95], [0, 0.95], [2.2, 0]]) {

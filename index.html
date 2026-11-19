@@ -14,7 +14,7 @@
     <div class="hud-tren">
       <div class="o"><small>VÒNG</small><b id="vong">1/3</b></div>
       <div class="o"><small>THỜI GIAN</small><b id="thoi-gian">0:00.00</b></div>
-      <div class="o"><small>HẠNG</small><b id="hang">4/4</b></div>
+      <div class="o"><small>HẠNG</small><b id="hang">6/6</b></div>
     </div>
     <canvas id="minimap"></canvas>
     <button id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
@@ -37,7 +37,8 @@
   <div id="menu" class="man">
     <div class="the rong">
       <h1>ĐƯỜNG ĐUA HOÀNG HÔN</h1>
-      <p>Vượt qua 3 đối thủ, hoàn thành <b>3 vòng</b> đua nhanh nhất có thể!</p>
+      <p class="phu-de">Chặng: <b id="ten-chang"></b></p>
+      <p>Vượt qua 5 đối thủ (3 ô tô, 2 xe máy), hoàn thành <b>3 vòng</b> đua nhanh nhất có thể!</p>
       <div class="hai-cot">
       <div class="phim">
         <kbd>↑ / W</kbd><span>Tăng ga</span>
@@ -56,6 +57,10 @@
       </div>
       <p class="nho">Điện thoại: dùng các nút trên màn hình · Qua dốc thật nhanh để bay lên!</p>
       <div class="tuy-chon">
+        <div class="dong-tc"><span>Chặng đua</span>
+          <div class="nhom" data-opt="chang"><button data-v="hoang-hon">🌄 Hoàng Hôn</button><button data-v="ven-bien">🏖️ Biển Xanh</button><button data-v="pho-dem">🌃 Phố Đêm</button></div>
+        </div>
+        <p class="nho mo-ta" id="mo-ta-chang"></p>
         <div class="dong-tc"><span>Độ khó</span>
           <div class="nhom" data-opt="doKho"><button data-v="de">Dễ</button><button data-v="vua">Vừa</button><button data-v="kho">Khó</button></div>
         </div>

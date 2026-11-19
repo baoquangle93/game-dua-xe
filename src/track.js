@@ -1,6 +1,6 @@
 // Đường đua: hình dạng, độ cao (đồi, gồ ghề, dốc nhảy), và các khối 3D
 import * as THREE from 'three';
-import { makeAsphalt, makeSand, makeStripes, makeGrass } from './textures.js';
+import { makeAsphalt, makeSand, makeStripes, makeGrass, makeConcrete } from './textures.js';
 
 export const SAMPLES = 1000;   // số điểm chia dọc đường đua
 export const ROAD_HALF = 8;    // nửa bề rộng mặt đường
@@ -8,28 +8,23 @@ export const CURB_W = 1.2;     // bề rộng bó vỉa đỏ trắng
 export const WALL_DIST = 16;   // khoảng cách từ tim đường tới tường chắn
 export const BANK_W = 16;      // bề rộng sườn đất từ tường xuống mặt cỏ
 
-// Các điểm điều khiển (x, z): dạng bầu dục, 2 đoạn thẳng dài, vài khúc cua thoải
-const CONTROL = [
-  [-60, 0], [200, 0], [290, 50], [300, 170], [230, 250],
-  [60, 260], [-100, 240], [-170, 160], [-160, 50],
-];
-
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const bump = (i, center, height, width) => height * Math.exp(-(((i - center) / width) ** 2));
 
 // Độ cao mặt đường tại điểm i. Khu xuất phát (gần i = 0) giữ bằng phẳng.
-function elevation(i, N) {
+function elevation(stage, i, N) {
   const s = i / N;
   const env = smooth(0.08, 0.16, s) * (1 - smooth(0.86, 0.93, s));
-  let h = env * (4.5 * (0.5 - 0.5 * Math.cos(4 * Math.PI * s)) + 2.5 * (0.5 - 0.5 * Math.cos(10 * Math.PI * s + 1.3)));
-  for (const c of [168, 176, 184, 192]) h += bump(i, c, 0.45, 2.2); // đoạn gồ ghề
-  h += bump(i, 475, 3.0, 6);  // dốc nhảy 1 (ngay sau ô tăng tốc)
-  h += bump(i, 735, 2.6, 6);  // dốc nhảy 2
+  let h = 0;
+  for (const [amp, freq, phase] of stage.hills) h += amp * (0.5 - 0.5 * Math.cos(freq * Math.PI * s + phase));
+  h *= env;
+  for (const c of stage.rough) h += bump(i, c, 0.45, 2.2); // đoạn gồ ghề
+  for (const [c, height] of stage.jumps) h += bump(i, c, height, 6); // dốc nhảy
   return h;
 }
 
-export function createTrack() {
-  const pts = CONTROL.map(([x, z]) => new THREE.Vector3(x * 1.5, 0, z * 1.5));
+export function createTrack(stage) {
+  const pts = stage.control.map(([x, z]) => new THREE.Vector3(x * 1.5, 0, z * 1.5));
   const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
   const samples = curve.getSpacedPoints(SAMPLES);
   samples.pop(); // điểm cuối trùng điểm đầu
@@ -40,7 +35,7 @@ export function createTrack() {
     const t = samples[(i + 1) % N].clone().sub(samples[(i - 1 + N) % N]).normalize();
     tangents.push(t);
     normals.push(new THREE.Vector3(t.z, 0, -t.x));
-    heights.push(elevation(i, N));
+    heights.push(elevation(stage, i, N));
   }
   for (let i = 0; i < N; i++) {
     curvature.push(tangents[i].angleTo(tangents[(i + 15) % N]));
@@ -111,7 +106,15 @@ export function ribbon(track, offA, offB, yA, yB, vScale, opt = {}) {
   return g;
 }
 
-export function buildTrackMeshes(scene, track) {
+// Màu tường chắn và chất liệu lề đường theo từng kiểu cảnh
+const LOOK = {
+  sunset: { wall: ['#e63946', '#f1faee'], verge: () => makeSand(), bank: () => makeGrass() },
+  beach: { wall: ['#1d8fe1', '#f1faee'], verge: () => makeSand('#e6cf9c'), bank: () => makeSand('#dcc28a') },
+  night: { wall: ['#f4c430', '#1b1b1f'], verge: () => makeConcrete('#5d6069'), bank: () => makeConcrete('#3d4048') },
+};
+
+export function buildTrackMeshes(scene, track, theme) {
+  const look = LOOK[theme];
   const add = (geo, mat, cast = false) => {
     const m = new THREE.Mesh(geo, mat);
     m.receiveShadow = true; m.castShadow = cast;
@@ -121,9 +124,9 @@ export function buildTrackMeshes(scene, track) {
     new THREE.MeshStandardMaterial({ map: makeAsphalt(), roughness: 0.82, metalness: 0.05, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }));
 
   const curbMat = new THREE.MeshStandardMaterial({ map: makeStripes('#d62839', '#f4f4f4'), roughness: 0.6, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 });
-  const sandMat = new THREE.MeshStandardMaterial({ map: makeSand(), roughness: 1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 });
-  const wallMat = new THREE.MeshStandardMaterial({ map: makeStripes('#e63946', '#f1faee'), roughness: 0.5, side: THREE.DoubleSide });
-  const bankMat = new THREE.MeshStandardMaterial({ map: makeGrass(), roughness: 1, side: THREE.DoubleSide });
+  const sandMat = new THREE.MeshStandardMaterial({ map: look.verge(), roughness: 1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 });
+  const wallMat = new THREE.MeshStandardMaterial({ map: makeStripes(...look.wall), roughness: 0.5, side: THREE.DoubleSide });
+  const bankMat = new THREE.MeshStandardMaterial({ map: look.bank(), roughness: 1, side: THREE.DoubleSide });
 
   for (const s of [-1, 1]) {
     add(ribbon(track, s * ROAD_HALF, s * (ROAD_HALF + CURB_W), 0.05, 0.05, 3), curbMat);

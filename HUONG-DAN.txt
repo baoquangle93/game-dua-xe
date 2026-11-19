@@ -16,11 +16,13 @@ Lưu ý: KHÔNG nhấp đúp file index.html để chơi được, vì game cầ
 
 CÁCH CHƠI
 - Bấm "BẮT ĐẦU ĐUA" (hoặc phím Enter), chờ đếm ngược 3-2-1.
-- Đua 3 vòng, cố về đích trước 3 xe đối thủ.
+- Đua 3 vòng, cố về đích trước 5 đối thủ (3 ô tô và 2 xe máy).
 - Ra khỏi mặt đường (lề cát) xe sẽ chậm lại; chạm tường xe trượt dọc theo tường.
 - Thời gian tốt nhất được lưu làm kỷ lục.
 
 TUỲ CHỌN Ở MENU
+- Chặng đua: Hoàng Hôn (dễ nhất) / Biển Xanh / Phố Đêm (nhiều cua nhất).
+  Bấm chọn chặng là game tải lại với đường đua và cảnh mới. Mỗi chặng có kỷ lục riêng.
 - Độ khó: Dễ / Vừa / Khó. Mới chơi nên chọn Dễ.
 - Đồ hoạ: Tự động (khuyên dùng) / Thấp / Vừa / Cao. Máy chạy giật thì chọn Thấp.
   Góc phải màn hình có hiện số FPS (càng gần 60 càng mượt).
@@ -35,7 +37,7 @@ CHƯỚNG NGẠI VẬT (có đánh dấu chấm màu trên bản đồ nhỏ)
 - Cọc tiêu (chấm cam)   : tông đổ được nhưng xe chậm lại.
 - Vũng dầu (chấm tím)   : xe trơn trượt, lắc đuôi, khó lái.
 - Mũi tên vàng (chấm vàng): chạy qua để được TĂNG TỐC.
-Muốn đổi vị trí chướng ngại vật: sửa danh sách PLAN trong file src/obstacles.js.
+Muốn đổi vị trí chướng ngại vật: sửa danh sách plan của từng chặng trong file src/stages.js.
 
 ĐIỀU KHIỂN
 - Mũi tên lên / W      : tăng ga

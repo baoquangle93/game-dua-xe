@@ -127,3 +127,8 @@ kbd { background: rgba(255,255,255,.14); border-radius: 6px; padding: 2px 8px; f
   #dem-nguoc { font-size: 76px; }
   #canh-bao { font-size: 24px; }
 }
+
+.the p.phu-de { margin: 4px 0 0; font-size: 15px; opacity: .85; }
+.the p.mo-ta { margin: -2px 0 4px; text-align: left; }
+.nhom button { white-space: nowrap; }
+.dong-tc { flex-wrap: wrap; }

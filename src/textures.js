@@ -33,10 +33,61 @@ export const makeGrass = () => canvasTex(512, 512, (g, w, h) => {
   specks(g, w, h, 26000, ['#4a7330', '#5f8c3a', '#6b9842', '#46692b', '#7a9f45'], 3);
 });
 
-export const makeSand = () => canvasTex(256, 256, (g, w, h) => {
-  g.fillStyle = '#c9a46c'; g.fillRect(0, 0, w, h);
-  specks(g, w, h, 9000, ['#b8925c', '#d6b47e', '#a98552', '#e0c08c'], 2);
+// Cát (màu nền tuỳ chọn), các hạt sáng tối được pha từ màu nền
+export const makeSand = (base = '#c9a46c') => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = base; g.fillRect(0, 0, w, h);
+  const c = new THREE.Color(base), cols = [];
+  for (const k of [0.88, 1.06, 0.8, 1.12]) cols.push('#' + c.clone().multiplyScalar(k).getHexString());
+  specks(g, w, h, 9000, cols, 2);
 });
+
+// Bê tông / vỉa hè (dùng ở thành phố)
+export const makeConcrete = (base = '#55585f') => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = base; g.fillRect(0, 0, w, h);
+  const c = new THREE.Color(base), cols = [];
+  for (const k of [0.85, 1.1, 0.92, 1.18]) cols.push('#' + c.clone().multiplyScalar(k).getHexString());
+  specks(g, w, h, 6000, cols, 2);
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); // khe nối các tấm
+});
+
+// Mặt biển: các gợn sóng sáng trên nền xanh (cuộn texture để sóng chạy)
+export const makeSea = () => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#2a86b8'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 260; i++) {
+    const x = Math.random() * w, y = Math.random() * h, l = 6 + Math.random() * 18;
+    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.35)' : 'rgba(120,210,235,0.45)';
+    g.lineWidth = 1 + Math.random() * 1.5;
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - 3, x + l, y); g.stroke();
+  }
+});
+
+// Cửa sổ nhà cao tầng: ô sáng vàng / trắng / tối ngẫu nhiên. Mỗi ô ảnh = 1 ô cửa
+export const makeWindows = () => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#15171f'; g.fillRect(0, 0, w, h);
+  const lit = ['#ffd27a', '#ffe6a8', '#bfe3ff', '#fff4d6'];
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const on = Math.random() < 0.42;
+    g.fillStyle = on ? lit[(Math.random() * lit.length) | 0] : '#252a36';
+    g.fillRect(x * 16 + 3, y * 16 + 4, 10, 9);
+  }
+});
+
+// Biển quảng cáo neon (chữ phát sáng trên nền tối)
+export const makeNeon = (text, color) => canvasTex(512, 160, (g, w, h) => {
+  g.fillStyle = '#0b0d18'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = color; g.lineWidth = 6; g.shadowColor = color; g.shadowBlur = 18;
+  g.strokeRect(10, 10, w - 20, h - 20);
+  g.fillStyle = '#ffffff'; g.font = 'italic 900 74px "Segoe UI", Arial, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, w / 2, h / 2 + 3);
+}, false);
+
+// Vệt sáng tròn mờ dần (vũng sáng dưới đèn đường)
+export const makeGlow = () => canvasTex(64, 64, (g, w, h) => {
+  const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.6, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+}, false);
 
 // Sọc hai màu chạy dọc theo đường (dùng cho bó vỉa và tường chắn)
 export const makeStripes = (a, b) => canvasTex(16, 64, (g, w, h) => {
