@@ -18,6 +18,7 @@
     </div>
     <canvas id="minimap"></canvas>
     <button id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
+    <div id="fps"></div>
     <div id="dem-nguoc"></div>
     <div id="canh-bao"></div>
     <div id="dong-ho">
@@ -34,14 +35,16 @@
 
   <!-- Màn hình bắt đầu -->
   <div id="menu" class="man">
-    <div class="the">
-      <h1>ĐƯỜNG ĐUA<br>HOÀNG HÔN</h1>
+    <div class="the rong">
+      <h1>ĐƯỜNG ĐUA HOÀNG HÔN</h1>
       <p>Vượt qua 3 đối thủ, hoàn thành <b>3 vòng</b> đua nhanh nhất có thể!</p>
+      <div class="hai-cot">
       <div class="phim">
         <kbd>↑ / W</kbd><span>Tăng ga</span>
         <kbd>↓ / S</kbd><span>Phanh / lùi</span>
         <kbd>← → / A D</kbd><span>Đánh lái</span>
         <kbd>Space</kbd><span>Phanh tay (drift)</span>
+        <kbd>R</kbd><span>Cứu hộ: đưa xe về giữa đường</span>
         <kbd>M</kbd><span>Bật / tắt âm thanh</span>
       </div>
       <div class="phim chu-giai">
@@ -50,7 +53,19 @@
         <span>⚫</span><span><b>Vũng dầu</b>: xe trơn trượt, khó lái</span>
         <span>⚡</span><span><b>Mũi tên vàng</b>: chạy qua để tăng tốc</span>
       </div>
-      <p class="nho">Điện thoại: dùng các nút trên màn hình</p>
+      </div>
+      <p class="nho">Điện thoại: dùng các nút trên màn hình · Qua dốc thật nhanh để bay lên!</p>
+      <div class="tuy-chon">
+        <div class="dong-tc"><span>Độ khó</span>
+          <div class="nhom" data-opt="doKho"><button data-v="de">Dễ</button><button data-v="vua">Vừa</button><button data-v="kho">Khó</button></div>
+        </div>
+        <div class="dong-tc"><span>Đồ hoạ</span>
+          <div class="nhom" data-opt="doHoa"><button data-v="tu-dong">Tự động</button><button data-v="thap">Thấp</button><button data-v="vua">Vừa</button><button data-v="cao">Cao</button></div>
+        </div>
+        <div class="dong-tc"><span>Hỗ trợ lái</span>
+          <div class="nhom" data-opt="hoTro"><button data-v="bat">Bật</button><button data-v="tat">Tắt</button></div>
+        </div>
+      </div>
       <button class="nut" id="nut-bat-dau">BẮT ĐẦU ĐUA</button>
       <p class="nho" id="ky-luc-menu"></p>
     </div>

@@ -3,13 +3,17 @@
 Game đua xe 3D chạy ngay trên trình duyệt, viết bằng **Three.js** và đóng gói bằng **Vite** (Node.js).
 Mọi hình ảnh (xe, đường đua, cây, núi, bầu trời) đều được dựng bằng code, không dùng file mô hình hay hình ảnh bên ngoài.
 
-## Tính năng (bản sơ bộ v0.1)
+## Tính năng (v0.3)
 
 - Đường đua khép kín lúc hoàng hôn: bó vỉa đỏ trắng, lề cát, tường chắn, cổng xuất phát, khán đài có khán giả
 - Ánh sáng và bóng đổ thời gian thực, thân xe sơn bóng phản chiếu bầu trời, hiệu ứng phát sáng (bloom)
 - Đường đua dạng bầu dục với các đoạn thẳng dài và vài khúc cua thoải
+- Địa hình lồi lõm: đồi lên xuống, đoạn gồ ghề, 2 dốc nhảy (xe bay lên khi qua dốc đủ nhanh)
 - Chướng ngại vật: thùng phuy (đâm vào bị bật lại), cọc tiêu (tông đổ được), vũng dầu (trơn trượt), ô mũi tên tăng tốc
 - 3 xe đối thủ do máy điều khiển, biết giảm tốc khi vào cua và lách tránh chướng ngại vật
+- Xe đối thủ chạy theo nhóm: dẫn xa thì chờ, bị bỏ xa thì đuổi theo; 3 mức độ khó Dễ / Vừa / Khó
+- Hỗ trợ lái (bật/tắt), chống kẹt và cứu hộ (phím R)
+- Đồ hoạ Tự động / Thấp / Vừa / Cao: tự hạ chất lượng nếu máy chạy chậm; vật lý tính theo bước cố định
 - 3 vòng đua, đếm ngược, đồng hồ, xếp hạng, bản đồ nhỏ, cảnh báo chạy sai hướng
 - Drift bằng phanh tay, khói bánh xe, bụi khi chạy ra lề cát
 - Tiếng động cơ tổng hợp bằng Web Audio

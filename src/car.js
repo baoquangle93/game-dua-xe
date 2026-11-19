@@ -20,6 +20,7 @@ const spokeB = new THREE.BoxGeometry(0.37, 0.07, 0.5);
 
 export function createCar(color) {
   const group = new THREE.Group();
+  group.rotation.order = 'YXZ'; // xoay hướng trước, rồi mới ngóc đầu / chúi đầu theo dốc
   const chassis = new THREE.Group(); // phần thân, nghiêng khi vào cua / phanh
   group.add(chassis);
 

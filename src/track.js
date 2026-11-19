@@ -1,18 +1,32 @@
-// Đường đua: hình dạng, dữ liệu để tính vị trí xe, và các khối 3D (mặt đường, bó vỉa, tường)
+// Đường đua: hình dạng, độ cao (đồi, gồ ghề, dốc nhảy), và các khối 3D
 import * as THREE from 'three';
-import { makeAsphalt, makeSand, makeStripes } from './textures.js';
+import { makeAsphalt, makeSand, makeStripes, makeGrass } from './textures.js';
 
 export const SAMPLES = 1000;   // số điểm chia dọc đường đua
 export const ROAD_HALF = 8;    // nửa bề rộng mặt đường
 export const CURB_W = 1.2;     // bề rộng bó vỉa đỏ trắng
 export const WALL_DIST = 16;   // khoảng cách từ tim đường tới tường chắn
+export const BANK_W = 16;      // bề rộng sườn đất từ tường xuống mặt cỏ
 
-// Các điểm điều khiển (x, z) của đường đua khép kín:
-// dạng bầu dục với 2 đoạn thẳng dài, chỉ vài khúc cua thoải
+// Các điểm điều khiển (x, z): dạng bầu dục, 2 đoạn thẳng dài, vài khúc cua thoải
 const CONTROL = [
   [-60, 0], [200, 0], [290, 50], [300, 170], [230, 250],
   [60, 260], [-100, 240], [-170, 160], [-160, 50],
 ];
+
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const bump = (i, center, height, width) => height * Math.exp(-(((i - center) / width) ** 2));
+
+// Độ cao mặt đường tại điểm i. Khu xuất phát (gần i = 0) giữ bằng phẳng.
+function elevation(i, N) {
+  const s = i / N;
+  const env = smooth(0.08, 0.16, s) * (1 - smooth(0.86, 0.93, s));
+  let h = env * (4.5 * (0.5 - 0.5 * Math.cos(4 * Math.PI * s)) + 2.5 * (0.5 - 0.5 * Math.cos(10 * Math.PI * s + 1.3)));
+  for (const c of [168, 176, 184, 192]) h += bump(i, c, 0.45, 2.2); // đoạn gồ ghề
+  h += bump(i, 475, 3.0, 6);  // dốc nhảy 1 (ngay sau ô tăng tốc)
+  h += bump(i, 735, 2.6, 6);  // dốc nhảy 2
+  return h;
+}
 
 export function createTrack() {
   const pts = CONTROL.map(([x, z]) => new THREE.Vector3(x * 1.5, 0, z * 1.5));
@@ -20,15 +34,19 @@ export function createTrack() {
   const samples = curve.getSpacedPoints(SAMPLES);
   samples.pop(); // điểm cuối trùng điểm đầu
   const N = SAMPLES;
-  const tangents = [], normals = [], curvature = [];
+  const length = curve.getLength(), segLen = length / N;
+  const tangents = [], normals = [], curvature = [], heights = [], slopes = [];
   for (let i = 0; i < N; i++) {
     const t = samples[(i + 1) % N].clone().sub(samples[(i - 1 + N) % N]).normalize();
     tangents.push(t);
     normals.push(new THREE.Vector3(t.z, 0, -t.x));
+    heights.push(elevation(i, N));
   }
-  for (let i = 0; i < N; i++) curvature.push(tangents[i].angleTo(tangents[(i + 15) % N]));
-  const length = curve.getLength();
-  return { samples, tangents, normals, curvature, length, segLen: length / N, N };
+  for (let i = 0; i < N; i++) {
+    curvature.push(tangents[i].angleTo(tangents[(i + 15) % N]));
+    slopes.push((heights[(i + 1) % N] - heights[(i - 1 + N) % N]) / (2 * segLen));
+  }
+  return { samples, tangents, normals, curvature, heights, slopes, length, segLen, N };
 }
 
 // Tìm điểm trên tim đường gần vị trí nhất, và độ lệch ngang so với tim đường
@@ -54,16 +72,34 @@ export function sampleAt(track, t, out) {
   return a;
 }
 
-// Tạo một dải chạy dọc theo đường, từ độ lệch offA tới offB
-function ribbon(track, offA, offB, yA, yB, vScale) {
-  const { samples, normals, N, segLen } = track;
+// Độ cao mặt đường tại một vị trí bất kỳ (gần điểm idx)
+export function heightAt(track, idx, pos) {
+  const { samples, tangents, heights, segLen, N } = track;
+  const s = samples[idx], t = tangents[idx];
+  const f = ((pos.x - s.x) * t.x + (pos.z - s.z) * t.z) / segLen;
+  const j = f >= 0 ? (idx + 1) % N : (idx - 1 + N) % N;
+  return heights[idx] + (heights[j] - heights[idx]) * Math.min(1, Math.abs(f));
+}
+
+export function heightAtT(track, t) {
+  const N = track.N, k = Math.floor(t), f = t - k;
+  const a = ((k % N) + N) % N, b = (a + 1) % N;
+  return track.heights[a] + (track.heights[b] - track.heights[a]) * f;
+}
+
+// Tạo một dải chạy dọc theo đường (bám theo độ cao), từ độ lệch ngang offA tới offB.
+// opt.i0/i1: chỉ dựng một đoạn; opt.groundB: mép B nằm ở độ cao cố định yB; opt.vFn: toạ độ v tuỳ chỉnh
+export function ribbon(track, offA, offB, yA, yB, vScale, opt = {}) {
+  const { samples, normals, heights, N, segLen } = track;
+  const i0 = opt.i0 ?? 0, i1 = opt.i1 ?? N;
   const pos = [], uv = [], idx = [];
-  for (let i = 0; i <= N; i++) {
-    const k = i % N, p = samples[k], n = normals[k], v = (i * segLen) / vScale;
-    pos.push(p.x + n.x * offA, yA, p.z + n.z * offA, p.x + n.x * offB, yB, p.z + n.z * offB);
+  for (let i = i0; i <= i1; i++) {
+    const k = ((i % N) + N) % N, p = samples[k], n = normals[k], h = heights[k];
+    const v = opt.vFn ? opt.vFn(i) : (i * segLen) / vScale;
+    pos.push(p.x + n.x * offA, h + yA, p.z + n.z * offA, p.x + n.x * offB, opt.groundB ? yB : h + yB, p.z + n.z * offB);
     uv.push(0, v, 1, v);
   }
-  for (let i = 0; i < N; i++) {
+  for (let i = 0; i < i1 - i0; i++) {
     const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
     idx.push(a, c, b, b, c, d);
   }
@@ -76,28 +112,24 @@ function ribbon(track, offA, offB, yA, yB, vScale) {
 }
 
 export function buildTrackMeshes(scene, track) {
-  const road = new THREE.Mesh(
-    ribbon(track, -ROAD_HALF, ROAD_HALF, 0.03, 0.03, 16),
-    new THREE.MeshStandardMaterial({ map: makeAsphalt(), roughness: 0.82, metalness: 0.05, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }),
-  );
-  road.receiveShadow = true;
-  scene.add(road);
+  const add = (geo, mat, cast = false) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.receiveShadow = true; m.castShadow = cast;
+    scene.add(m);
+  };
+  add(ribbon(track, -ROAD_HALF, ROAD_HALF, 0.03, 0.03, 16),
+    new THREE.MeshStandardMaterial({ map: makeAsphalt(), roughness: 0.82, metalness: 0.05, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 }));
 
   const curbMat = new THREE.MeshStandardMaterial({ map: makeStripes('#d62839', '#f4f4f4'), roughness: 0.6, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 });
-  for (const [a, b] of [[-ROAD_HALF - CURB_W, -ROAD_HALF], [ROAD_HALF, ROAD_HALF + CURB_W]]) {
-    const m = new THREE.Mesh(ribbon(track, a, b, 0.05, 0.05, 3), curbMat);
-    m.receiveShadow = true; scene.add(m);
-  }
-
   const sandMat = new THREE.MeshStandardMaterial({ map: makeSand(), roughness: 1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 });
-  for (const [a, b] of [[-WALL_DIST, -ROAD_HALF - CURB_W], [ROAD_HALF + CURB_W, WALL_DIST]]) {
-    const m = new THREE.Mesh(ribbon(track, a, b, 0, 0, 8), sandMat);
-    m.receiveShadow = true; scene.add(m);
-  }
-
   const wallMat = new THREE.MeshStandardMaterial({ map: makeStripes('#e63946', '#f1faee'), roughness: 0.5, side: THREE.DoubleSide });
-  for (const off of [-WALL_DIST, WALL_DIST]) {
-    const m = new THREE.Mesh(ribbon(track, off, off, 0, 1.1, 4), wallMat);
-    m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  const bankMat = new THREE.MeshStandardMaterial({ map: makeGrass(), roughness: 1, side: THREE.DoubleSide });
+
+  for (const s of [-1, 1]) {
+    add(ribbon(track, s * ROAD_HALF, s * (ROAD_HALF + CURB_W), 0.05, 0.05, 3), curbMat);
+    add(ribbon(track, s * (ROAD_HALF + CURB_W), s * WALL_DIST, 0, 0, 8), sandMat);
+    add(ribbon(track, s * WALL_DIST, s * WALL_DIST, 0, 1.1, 4), wallMat, true);
+    // Sườn đất cỏ từ chân tường xuống mặt đất (để đoạn đường trên đồi không bị "lơ lửng")
+    add(ribbon(track, s * WALL_DIST, s * (WALL_DIST + BANK_W), 0, -0.3, 13, { groundB: true }), bankMat);
   }
 }

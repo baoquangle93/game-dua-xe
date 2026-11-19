@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeGrass, makeChecker, makeBanner } from './textures.js';
-import { ROAD_HALF, WALL_DIST } from './track.js';
+import { ROAD_HALF, WALL_DIST, BANK_W } from './track.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -43,12 +43,12 @@ export function buildWorld(scene, renderer, track) {
   grassTex.repeat.set(380, 380);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({ map: grassTex, roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.3;
+  ground.position.y = -0.35;
   ground.receiveShadow = true;
   scene.add(ground);
 
   // ---------- Cây (dùng instancing để vẽ hàng trăm cây vẫn mượt) ----------
-  const far2 = (WALL_DIST + 9) ** 2;
+  const far2 = (WALL_DIST + BANK_W + 3) ** 2;
   const nearTrack = (x, z) => {
     for (let i = 0; i < track.N; i += 4) {
       const s = track.samples[i], dx = x - s.x, dz = z - s.z;
@@ -139,7 +139,7 @@ export function buildWorld(scene, renderer, track) {
   const frameAt = (i, side = 1) => {
     const g = new THREE.Group();
     const t = track.tangents[i], p = track.samples[i];
-    g.position.set(p.x, 0, p.z);
+    g.position.set(p.x, track.heights[i], p.z);
     g.rotation.y = Math.atan2(t.x, t.z) + (side < 0 ? Math.PI : 0); // trục x của nhóm = phương ngang đường
     scene.add(g);
     return g;

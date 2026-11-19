@@ -78,6 +78,19 @@ export const makeBoost = () => canvasTex(128, 128, (g, w, h) => {
   }
 });
 
+// Vũng dầu: các đốm đen bóng chồng lên nhau, nền trong suốt
+export const makeOil = () => canvasTex(128, 128, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(8,8,14,0.92)';
+  for (const [x, y, rx, ry] of [[64, 64, 46, 54], [38, 44, 22, 26], [92, 82, 26, 30], [70, 26, 20, 18], [50, 100, 22, 18]]) {
+    g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  }
+  const sheen = g.createLinearGradient(20, 20, 110, 110);
+  sheen.addColorStop(0, 'rgba(120,80,200,0.25)'); sheen.addColorStop(0.5, 'rgba(40,160,180,0.18)'); sheen.addColorStop(1, 'rgba(200,120,60,0.2)');
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = sheen; g.fillRect(0, 0, w, h);
+}, false);
+
 export const makeSmoke = () => canvasTex(64, 64, (g, w, h) => {
   const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');

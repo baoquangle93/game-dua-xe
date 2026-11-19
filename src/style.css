@@ -98,7 +98,26 @@ kbd { background: rgba(255,255,255,.14); border-radius: 6px; padding: 2px 8px; f
 .nut:active { transform: scale(.97); }
 .nut.phu { background: rgba(255, 255, 255, .15); color: #fff; box-shadow: none; }
 
+#fps { position: absolute; top: 222px; right: 12px; font-size: 11px; opacity: .65; text-shadow: 0 1px 3px #000; }
+
+/* Tuỳ chọn ở menu */
+.tuy-chon { margin: 14px auto 8px; max-width: 360px; display: grid; gap: 8px; }
+.dong-tc { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.nhom { display: flex; background: rgba(255,255,255,.08); border-radius: 999px; padding: 3px; }
+.nhom button {
+  border: none; background: none; color: #fff; font: inherit; font-size: 13px; font-weight: 700;
+  padding: 6px 11px; border-radius: 999px; cursor: pointer; opacity: .75;
+}
+.nhom button.chon { background: linear-gradient(90deg, #ffd166, #ef476f); color: #1a1022; opacity: 1; }
+.chu-giai { font-size: 13px; }
+.the.rong { max-width: 680px; padding: 22px 24px; }
+.hai-cot { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; align-items: start; }
+.hai-cot .phim { margin: 10px 0; max-width: none; }
+@media (max-width: 640px) { .hai-cot { grid-template-columns: 1fr; } .hai-cot .phim { margin: 8px auto; max-width: 300px; } }
+
 @media (max-width: 560px) {
+  #fps { top: 158px; }
+  .nhom button { padding: 5px 8px; font-size: 12px; }
   .o { min-width: 0; padding: 5px 10px; }
   .o b { font-size: 17px; }
   .o small { font-size: 10px; }
