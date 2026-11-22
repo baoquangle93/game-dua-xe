@@ -341,7 +341,7 @@ export function buildWorld(scene, renderer, track, stage) {
     const spots = [];
     for (let k = 0; k < 520; k++) { const s = randomSpot(WALL_DIST + BANK_W + 3, 560); if (s) spots.push(s); }
     plantTrees(spots, 0.58, ['#2f6b2a', '#3d7f33', '#4f8f3a', '#6a9b3f', '#3f6e2c', '#2f6b2a', '#c46a2b', '#d9a03a']);
-    mountains(20, 880, 1200, 150, 340, [0x4a4470, 0x8a6a9a, 0xfbeef0]);
+    mountains(20, 880, 1200, 150, 340, [0x4a4470, 0x8a6a9a, stage.noSnow ? 0x9d86ad : 0xfbeef0]);
     clouds(16, 0xfff1e6, 0x553322);
     // Khinh khí cầu bay lơ lửng
     const balloonCols = [['#ef476f', '#ffd166'], ['#06d6a0', '#118ab2'], ['#ff9f1c', '#ffffff'], ['#9b5de5', '#f15bb5'], ['#e63946', '#f1faee']];

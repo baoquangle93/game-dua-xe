@@ -14,7 +14,15 @@ CHẠY TRÊN MÁY (cần Node.js)
 Lưu ý: KHÔNG nhấp đúp file index.html để chơi được, vì game cần Vite chạy
 (npm run dev) mới mở được.
 
-CÁCH CHƠI
+PHƯỢT XUYÊN VIỆT (chế độ chính)
+- Bấm "PHƯỢT XUYÊN VIỆT" ở đầu menu. Hiện ra lộ trình Hà Nội → Sài Gòn.
+- Mỗi chặng đua 2 vòng. Về TOP 3 thì được đi tiếp chặng sau.
+- Thua thì mất 1 lượt thử lại (❤️). Cả hành trình có 2 lượt; hết lượt phải đi lại từ đầu.
+- Chặng sau đối thủ chạy nhanh hơn chặng trước.
+- Tiến độ được lưu: tắt trình duyệt rồi mở lại vẫn đi tiếp được.
+- Về đến Sài Gòn: game cộng tổng thời gian và lưu kỷ lục hành trình.
+
+ĐUA TỰ DO - CÁCH CHƠI
 - Bấm "BẮT ĐẦU ĐUA" (hoặc phím Enter), chờ đếm ngược 3-2-1.
 - Đua 3 vòng, cố về đích trước 5 đối thủ (3 ô tô và 2 xe máy).
 - Ra khỏi mặt đường (lề cát) xe sẽ chậm lại; chạm tường xe trượt dọc theo tường.

@@ -6,6 +6,7 @@ import { buildWorld, exposureOf } from './scenery.js';
 import { createCar } from './car.js';
 import { createBike } from './bike.js';
 import { STAGES } from './stages.js';
+import { JOURNEY, newJourney, loadJourney, saveJourney, loadJourneyBest, saveJourneyBest, inProgress } from './journey.js';
 import { input, setupInput } from './input.js';
 import { Smoke, EngineSound } from './effects.js';
 import { createObstacles } from './obstacles.js';
@@ -14,7 +15,6 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-const LAPS = 3;          // số vòng đua
 const MAX_SPEED = 62;    // tốc độ tối đa (đơn vị game / giây)
 const KMH = 3.4;         // hệ số đổi ra km/h để hiển thị
 const STEP = 1 / 60;     // vật lý luôn tính theo bước 1/60 giây => máy chậm game không bị chậm theo
@@ -28,7 +28,16 @@ const settings = { doKho: 'vua', doHoa: 'tu-dong', hoTro: 'bat', chang: 'hoang-h
 try { Object.assign(settings, JSON.parse(localStorage.getItem('dua-xe-cai-dat')) || {}); } catch (e) { /* bỏ qua */ }
 const saveSettings = () => { try { localStorage.setItem('dua-xe-cai-dat', JSON.stringify(settings)); } catch (e) { /* bỏ qua */ } };
 if (!STAGES[settings.chang]) settings.chang = 'hoang-hon';
-const stageId = settings.chang, stage = STAGES[stageId]; // chặng đang chơi
+// Đang đi hành trình Phượt Xuyên Việt? Nếu có thì dùng đường đua của chặng hiện tại
+let journey = loadJourney();
+const inJourney = !!(journey && journey.open && inProgress(journey));
+const leg = inJourney ? JOURNEY.legs[journey.leg] : null;
+const stageId = inJourney ? leg.stage : settings.chang;
+const stage = inJourney
+  ? { ...STAGES[stageId], name: leg.from + ' → ' + leg.to, banner: (leg.from + ' → ' + leg.to).toUpperCase(), noSnow: true }
+  : STAGES[stageId]; // chặng đang chơi
+const LAPS = inJourney ? JOURNEY.laps : 3; // số vòng đua
+const LEG_SKILL = inJourney ? leg.skill : 1; // chặng sau đối thủ mạnh hơn
 const SKILL = { de: 0.78, vua: 0.88, kho: 0.98 }; // tốc độ xe máy theo độ khó
 
 // ---------- Khởi tạo đồ hoạ ----------
@@ -134,7 +143,7 @@ let countdown = 0, raceTime = 0, goTimer = 0, menuT = 0, shake = 0, raceId = 0;
 let muted = false, finishShown = false;
 let best = null;
 const BEST_KEY = settings.chang === 'hoang-hon' ? 'dua-xe-ky-luc' : 'dua-xe-ky-luc-' + settings.chang;
-try { best = Number(localStorage.getItem(BEST_KEY)) || null; } catch (e) { /* trình duyệt chặn lưu */ }
+if (!inJourney) try { best = Number(localStorage.getItem(BEST_KEY)) || null; } catch (e) { /* trình duyệt chặn lưu */ }
 
 const fmt = (t) => {
   const m = Math.floor(t / 60), s = t - m * 60;
@@ -171,7 +180,10 @@ $('nut-dua-lai').addEventListener('click', startRace);
 $('nut-menu').addEventListener('click', toMenu);
 $('nut-am').addEventListener('click', toggleMute);
 addEventListener('keydown', (e) => {
-  if (e.code === 'Enter' && (state === 'menu' || finishShown)) startRace();
+  if (e.code === 'Enter') {
+    if (inJourney) { if (finishShown) $('nut-ht-chinh').click(); else if (state === 'menu') $('ht-bat-dau').click(); }
+    else if (state === 'menu' || finishShown) startRace();
+  }
   if (e.code === 'KeyM') toggleMute();
 });
 
@@ -198,16 +210,107 @@ function playerRank() {
   return rank;
 }
 
+// Tiêu đề màn kết quả: biểu tượng tách riêng (chữ tiêu đề tô màu chuyển sắc sẽ làm biểu tượng bị mất màu)
+function setTitle(icon, text) { $('kq-icon').textContent = icon; $('kq-tieu-de').textContent = text; }
+
 function showResults(id) {
   if (id !== raceId) return;
   finishShown = true;
   const rank = playerRank(), t = player.finishTime;
+  if (inJourney) { showJourneyResult(rank, t); return; }
   const newBest = best == null || t < best;
   if (newBest) { best = t; try { localStorage.setItem(BEST_KEY, String(t)); } catch (e) { /* bỏ qua */ } }
-  $('kq-tieu-de').textContent = rank === 1 ? '🏆 CHIẾN THẮNG!' : 'VỀ ĐÍCH!';
+  setTitle(rank === 1 ? '🏆' : '🏁', rank === 1 ? 'CHIẾN THẮNG!' : 'VỀ ĐÍCH!');
   $('kq-hang').textContent = `Hạng ${rank}/${racers.length}`;
   $('kq-thoi-gian').textContent = 'Thời gian: ' + fmt(t) + (newBest ? ' — kỷ lục mới!' : '');
   $('kq-ky-luc').textContent = 'Kỷ lục: ' + fmt(best);
+  $('ket-qua').classList.remove('an-di');
+}
+
+// ---------- PHƯỢT XUYÊN VIỆT ----------
+const hearts = (n) => '❤️'.repeat(n) + '🤍'.repeat(JOURNEY.retries - n);
+const reloadPage = () => setTimeout(() => location.reload(), 30);
+function goJourney(j) { journey = j; j.open = true; saveJourney(j); $('nut-xuyen-viet').textContent = 'ĐANG LÊN ĐƯỜNG...'; reloadPage(); }
+function leaveJourney() { journey.open = false; saveJourney(journey); reloadPage(); }
+
+// Vẽ lộ trình: điểm đã qua (xanh), điểm đang tới (nhấp nháy), điểm sắp mở (mờ)
+function renderJourneyMap() {
+  const j = journey, total = JOURNEY.legs.length;
+  $('ht-lo-trinh').innerHTML = JOURNEY.stops.map((st, i) => {
+    let cls = '', tag = '';
+    if (st.soon) { cls = 'khoa'; tag = 'sắp mở'; }
+    else if (i === 0 || st.leg < j.leg) { cls = 'xong'; tag = i === 0 ? st.note : fmt(j.times[st.leg]); }
+    else if (st.leg === j.leg) { cls = 'dang'; tag = 'đang tới'; }
+    return '<li class="' + cls + '">' + st.name + '<small>' + tag + '</small></li>';
+  }).join('');
+  $('ht-phu-de').textContent = JOURNEY.stops[0].name + ' → ' + JOURNEY.legs[total - 1].to + ' · ' + total + ' chặng';
+  $('ht-so-chang').textContent = 'CHẶNG ' + (j.leg + 1) + '/' + total;
+  $('ht-ten-chang').textContent = leg.from + ' → ' + leg.to;
+  $('ht-mo-ta').textContent = leg.desc;
+  $('ht-luat').textContent = JOURNEY.laps + ' vòng · về top ' + JOURNEY.top + ' để đi tiếp';
+  $('ht-mang').textContent = 'Lượt thử lại: ' + hearts(j.retries);
+  $('ht-lam-lai').parentElement.classList.toggle('an-di', j.leg === 0 && j.retries === JOURNEY.retries);
+}
+
+function setupJourneyUI() {
+  // Nút ở menu: bắt đầu mới hoặc đi tiếp hành trình đang dở
+  if (inProgress(journey)) $('nut-xuyen-viet').textContent = '▶ TIẾP TỤC PHƯỢT (chặng ' + (journey.leg + 1) + '/' + JOURNEY.legs.length + ')';
+  $('nut-xuyen-viet').addEventListener('click', () => goJourney(inProgress(journey) ? journey : newJourney()));
+  if (!inJourney) return;
+  $('menu').classList.add('an-di');
+  $('hanh-trinh').classList.remove('an-di');
+  renderJourneyMap();
+  $('ht-bat-dau').addEventListener('click', () => { $('hanh-trinh').classList.add('an-di'); startRace(); });
+  $('ht-menu').addEventListener('click', leaveJourney);
+  $('ht-lam-lai').addEventListener('click', (e) => { e.preventDefault(); goJourney(newJourney()); });
+  $('nut-dua-lai').classList.add('an-di');
+  $('nut-menu').classList.add('an-di');
+  for (const id of ['nut-ht-chinh', 'nut-ht-phu']) {
+    $(id).classList.remove('an-di');
+    $(id).addEventListener('click', () => journeyAction[id] && journeyAction[id]());
+  }
+}
+
+// Kết quả sau mỗi chặng: qua chặng / thử lại / hết lượt / về đích cuối cùng
+const journeyAction = {};
+function showJourneyResult(rank, t) {
+  const j = journey, total = JOURNEY.legs.length;
+  const pass = rank <= JOURNEY.top;
+  const setBtns = (main, mainFn, sub, subFn) => {
+    $('nut-ht-chinh').textContent = main; journeyAction['nut-ht-chinh'] = mainFn;
+    $('nut-ht-phu').textContent = sub; journeyAction['nut-ht-phu'] = subFn;
+  };
+  $('kq-hang').textContent = 'Hạng ' + rank + '/' + racers.length;
+  $('kq-thoi-gian').textContent = 'Thời gian chặng: ' + fmt(t);
+  if (pass) {
+    j.times[j.leg] = t;
+    j.leg++;
+    if (j.leg >= total) {
+      j.finished = true; j.open = false;
+      const sum = j.times.reduce((a, b) => a + b, 0), prev = loadJourneyBest();
+      const newBest = prev == null || sum < prev;
+      if (newBest) saveJourneyBest(sum);
+      setTitle('🎉', 'ĐÃ ĐẾN ' + leg.to.toUpperCase() + '!');
+      $('kq-ky-luc').textContent = 'Tổng thời gian hành trình: ' + fmt(sum) + (newBest ? ' — kỷ lục mới!' : ' · Kỷ lục: ' + fmt(prev));
+      setBtns('ĐI LẠI TỪ ĐẦU', () => goJourney(newJourney()), 'MENU', reloadPage);
+    } else {
+      const next = JOURNEY.legs[j.leg];
+      setTitle('✅', 'ĐÃ ĐẾN ' + leg.to.toUpperCase() + '!');
+      $('kq-ky-luc').textContent = 'Chặng tiếp theo: ' + next.from + ' → ' + next.to;
+      setBtns('ĐI TIẾP ➜ ' + next.to.toUpperCase(), () => goJourney(j), 'MENU', leaveJourney);
+    }
+  } else if (j.retries > 0) {
+    j.retries--;
+    setTitle('😓', 'CHƯA VÀO TOP ' + JOURNEY.top);
+    $('kq-ky-luc').textContent = 'Lượt thử lại còn: ' + hearts(j.retries);
+    setBtns('ĐUA LẠI CHẶNG NÀY', () => { $('ket-qua').classList.add('an-di'); startRace(); }, 'MENU', leaveJourney);
+  } else {
+    j.over = true; j.open = false;
+    setTitle('💥', 'HÀNH TRÌNH DỪNG LẠI');
+    $('kq-ky-luc').textContent = 'Bạn đã đi được ' + j.leg + '/' + total + ' chặng. Hết lượt thử lại.';
+    setBtns('ĐI LẠI TỪ ĐẦU', () => goJourney(newJourney()), 'MENU', reloadPage);
+  }
+  saveJourney(j);
   $('ket-qua').classList.remove('an-di');
 }
 
@@ -480,7 +583,7 @@ function updateAI(a, dt) {
   const N = track.N;
   const k = ((Math.floor(a.t) + 12) % N + N) % N;
   const curv = Math.max(track.curvature[k], track.curvature[(k + 12) % N]);
-  let target = 57 * a.skill * SKILL[settings.doKho] * (1 - Math.min(0.5, curv * 0.9)); // giảm tốc trước khúc cua
+  let target = 57 * a.skill * SKILL[settings.doKho] * LEG_SKILL * (1 - Math.min(0.5, curv * 0.9)); // giảm tốc trước khúc cua
 
   // Chạy theo nhóm: dẫn xa thì chậm lại chờ, bị bỏ xa thì tăng tốc đuổi theo
   if (player.finishTime == null) {
@@ -707,6 +810,8 @@ if (stage.theme === 'night') {
   player.car.group.add(head, head.target);
 }
 $('ten-chang').textContent = stage.name;
+$('hud-chang').textContent = inJourney ? '🏍️ Chặng ' + (journey.leg + 1) + '/' + JOURNEY.legs.length + ': ' + stage.name : stage.name;
+setupJourneyUI();
 $('mo-ta-chang').textContent = stage.desc;
 placeOnGrid();
 showBest();

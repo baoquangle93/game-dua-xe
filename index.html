@@ -16,6 +16,7 @@
       <div class="o"><small>THỜI GIAN</small><b id="thoi-gian">0:00.00</b></div>
       <div class="o"><small>HẠNG</small><b id="hang">6/6</b></div>
     </div>
+    <div id="hud-chang"></div>
     <canvas id="minimap"></canvas>
     <button id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
     <div id="fps"></div>
@@ -39,6 +40,12 @@
       <h1>ĐƯỜNG ĐUA HOÀNG HÔN</h1>
       <p class="phu-de">Chặng: <b id="ten-chang"></b></p>
       <p>Vượt qua 5 đối thủ (3 ô tô, 2 xe máy), hoàn thành <b>3 vòng</b> đua nhanh nhất có thể!</p>
+      <div class="che-do-moi" id="khung-xuyen-viet">
+        <b>🏍️ PHƯỢT XUYÊN VIỆT</b> <span class="nhan-moi">MỚI</span>
+        <span>Cầm lái từ Hà Nội vào Sài Gòn qua từng chặng. Về top 3 để đi tiếp, có 2 lượt thử lại.</span>
+      </div>
+      <button class="nut" id="nut-xuyen-viet">🏍️ PHƯỢT XUYÊN VIỆT</button>
+      <p class="nho tieu-de-tu-do">— hoặc ĐUA TỰ DO: chọn chặng và tuỳ chọn bên dưới —</p>
       <div class="hai-cot">
       <div class="phim">
         <kbd>↑ / W</kbd><span>Tăng ga</span>
@@ -71,20 +78,42 @@
           <div class="nhom" data-opt="hoTro"><button data-v="bat">Bật</button><button data-v="tat">Tắt</button></div>
         </div>
       </div>
-      <button class="nut" id="nut-bat-dau">BẮT ĐẦU ĐUA</button>
+      <button class="nut phu" id="nut-bat-dau">ĐUA TỰ DO</button>
       <p class="nho" id="ky-luc-menu"></p>
+    </div>
+  </div>
+
+  <!-- Bản đồ hành trình Phượt Xuyên Việt -->
+  <div id="hanh-trinh" class="man an-di">
+    <div class="the">
+      <h1>PHƯỢT XUYÊN VIỆT</h1>
+      <p class="nho" id="ht-phu-de"></p>
+      <ol id="ht-lo-trinh"></ol>
+      <div class="ht-chang">
+        <small id="ht-so-chang"></small>
+        <b id="ht-ten-chang"></b>
+        <span id="ht-mo-ta"></span>
+        <span class="ht-luat" id="ht-luat"></span>
+      </div>
+      <p id="ht-mang"></p>
+      <button class="nut" id="ht-bat-dau">BẮT ĐẦU CHẶNG</button>
+      <button class="nut phu" id="ht-menu">MENU</button>
+      <p class="nho"><a href="#" id="ht-lam-lai">Đi lại từ đầu</a></p>
     </div>
   </div>
 
   <!-- Màn hình kết quả -->
   <div id="ket-qua" class="man an-di">
     <div class="the">
+      <div class="kq-icon" id="kq-icon"></div>
       <h1 id="kq-tieu-de">VỀ ĐÍCH!</h1>
       <p class="lon" id="kq-hang"></p>
       <p id="kq-thoi-gian"></p>
       <p class="nho" id="kq-ky-luc"></p>
       <button class="nut" id="nut-dua-lai">ĐUA LẠI</button>
       <button class="nut phu" id="nut-menu">MENU</button>
+      <button class="nut an-di" id="nut-ht-chinh"></button>
+      <button class="nut phu an-di" id="nut-ht-phu"></button>
     </div>
   </div>
 

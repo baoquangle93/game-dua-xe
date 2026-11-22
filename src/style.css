@@ -132,3 +132,31 @@ kbd { background: rgba(255,255,255,.14); border-radius: 6px; padding: 2px 8px; f
 .the p.mo-ta { margin: -2px 0 4px; text-align: left; }
 .nhom button { white-space: nowrap; }
 .dong-tc { flex-wrap: wrap; }
+
+/* ---------- Phượt Xuyên Việt ---------- */
+#hud-chang { position: absolute; top: 76px; left: 14px; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-shadow: 0 1px 4px rgba(0,0,0,.8); opacity: .9; }
+.che-do-moi { margin: 12px auto 4px; max-width: 460px; padding: 10px 14px; border-radius: 14px; text-align: left; font-size: 13px; line-height: 1.45;
+  background: linear-gradient(90deg, rgba(255,209,102,.16), rgba(239,71,111,.16)); border: 1px solid rgba(255,209,102,.35); }
+.che-do-moi b { font-size: 14px; }
+.che-do-moi span:last-child { display: block; opacity: .85; margin-top: 2px; }
+.nhan-moi { background: #ef476f; color: #fff; font-size: 10px; font-weight: 900; padding: 1px 6px; border-radius: 6px; vertical-align: 2px; }
+#ht-lo-trinh { list-style: none; margin: 14px auto 10px; max-width: 300px; text-align: left; position: relative; }
+#ht-lo-trinh::before { content: ''; position: absolute; left: 11px; top: 10px; bottom: 10px; width: 3px; background: rgba(255,255,255,.18); border-radius: 2px; }
+#ht-lo-trinh li { position: relative; padding: 4px 0 4px 34px; font-size: 15px; font-weight: 700; }
+#ht-lo-trinh li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 17px; height: 17px; border-radius: 50%; background: #2a2540; border: 2px solid rgba(255,255,255,.5); box-sizing: border-box; }
+#ht-lo-trinh li small { font-weight: 600; font-size: 12px; opacity: .65; margin-left: 6px; }
+#ht-lo-trinh li.xong::before { background: #06d6a0; border-color: #06d6a0; }
+#ht-lo-trinh li.dang { color: #ffd166; }
+#ht-lo-trinh li.dang::before { background: #ef476f; border-color: #ffd166; box-shadow: 0 0 0 5px rgba(239,71,111,.3); animation: nhap 1.2s ease-in-out infinite; }
+#ht-lo-trinh li.khoa { opacity: .4; font-weight: 600; }
+#ht-lo-trinh li.khoa::before { width: 11px; height: 11px; left: 7px; top: 11px; }
+@keyframes nhap { 50% { box-shadow: 0 0 0 9px rgba(239,71,111,0); } }
+.ht-chang { background: rgba(255,255,255,.07); border-radius: 14px; padding: 12px 14px; text-align: left; display: grid; gap: 3px; }
+.ht-chang small { font-size: 11px; letter-spacing: .12em; opacity: .7; font-weight: 700; }
+.ht-chang b { font-size: 20px; }
+.ht-chang span { font-size: 13px; opacity: .85; }
+.ht-chang .ht-luat { color: #ffd166; opacity: 1; font-weight: 700; }
+#ht-mang { font-size: 14px; }
+#ht-lam-lai { color: #fff; opacity: .7; }
+.the p.tieu-de-tu-do { margin: 10px 0 2px; }
+.kq-icon { font-size: 44px; line-height: 1; margin-bottom: 4px; }
