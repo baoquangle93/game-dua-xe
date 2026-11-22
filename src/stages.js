@@ -11,6 +11,10 @@ export const STAGES = {
     desc: 'Rừng thông, núi tuyết, làng nhỏ và khinh khí cầu lúc chiều tà. Đường dễ, hợp để làm quen.',
     banner: 'ĐỒI HOÀNG HÔN',
     theme: 'sunset',
+    hazards: {
+      coins: [[60, 0, 'line'], [130, 3, 'zigzag'], [232, -3, 'line'], [292, 0, 'cross'], [362, -3, 'line'], [430, 3, 'zigzag'], [512, 0, 'line'], [612, -3, 'cross'], [682, 3, 'line'], [762, 0, 'zigzag'], [872, -3, 'line'], [940, 0, 'line']],
+      trucks: [300, 800], buffalo: [245, 620], rocks: [310, 820], potholes: [120, 370, 680, 875],
+    },
     control: [[-60, 0], [200, 0], [290, 50], [300, 170], [230, 250], [60, 260], [-100, 240], [-170, 160], [-160, 50]],
     hills: [[4.5, 4, 0], [2.5, 10, 1.3]],
     rough: [168, 176, 184, 192],
@@ -38,6 +42,10 @@ export const STAGES = {
     desc: 'Chạy dọc bờ biển giữa trưa: hàng dừa, ô dù, hải đăng và thuyền buồm. Đường dài, nhiều dốc nhỏ.',
     banner: 'ĐƯỜNG ĐUA BIỂN XANH',
     theme: 'beach',
+    hazards: {
+      coins: [[60, 0, 'line'], [165, -4, 'line'], [240, 0, 'zigzag'], [360, 3, 'line'], [425, 0, 'cross'], [540, -3, 'zigzag'], [635, 0, 'line'], [745, 3, 'line'], [830, 0, 'cross'], [935, -3, 'line']],
+      trucks: [200, 700], buffalo: [300], potholes: [170, 480, 690, 880], rain: [[395, 565]],
+    },
     control: [[-80, 0], [240, 0], [330, 45], [355, 150], [300, 225], [190, 235], [90, 265], [-30, 295], [-150, 260], [-195, 150], [-170, 45]],
     hills: [[3, 6, 0.5], [1.6, 14, 2]],
     rough: [760, 768, 776, 784],
@@ -65,6 +73,10 @@ export const STAGES = {
     desc: 'Đua giữa thành phố về đêm: nhà cao tầng sáng đèn, đèn đường và biển quảng cáo neon. Nhiều khúc cua nhất.',
     banner: 'ĐƯỜNG ĐUA PHỐ ĐÊM',
     theme: 'night',
+    hazards: {
+      coins: [[60, 0, 'line'], [120, 3, 'line'], [240, -3, 'zigzag'], [312, 0, 'line'], [392, 3, 'cross'], [455, -3, 'line'], [525, 0, 'zigzag'], [595, 3, 'line'], [680, 0, 'cross'], [760, -3, 'line'], [870, 3, 'zigzag'], [940, 0, 'line']],
+      trucks: [300, 750], train: [185], potholes: [320, 460, 600, 880], rain: [[380, 540]],
+    },
     control: [[-90, 0], [200, 0], [285, 45], [305, 150], [255, 215], [150, 225], [80, 275], [40, 345], [-60, 370], [-160, 330], [-200, 240], [-180, 80]],
     hills: [[2, 2, 0], [1.2, 8, 0.7]],
     rough: [720, 728, 736, 744],

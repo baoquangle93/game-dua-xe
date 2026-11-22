@@ -147,3 +147,37 @@ export const makeSmoke = () => canvasTex(64, 64, (g, w, h) => {
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = gr; g.fillRect(0, 0, w, h);
 }, false);
+
+// Biển báo nguy hiểm: hình thoi vàng viền đen, có biểu tượng và chữ
+export const makeSign = (icon, text) => canvasTex(256, 256, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  g.save(); g.translate(w / 2, h / 2); g.rotate(Math.PI / 4);
+  g.fillStyle = '#111'; g.fillRect(-88, -88, 176, 176);
+  g.fillStyle = '#ffcc00'; g.fillRect(-80, -80, 160, 160);
+  g.restore();
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '72px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; g.fillText(icon, w / 2, h / 2 - 14);
+  g.fillStyle = '#111'; g.font = '900 30px "Segoe UI", Arial, sans-serif'; g.fillText(text, w / 2, h / 2 + 50);
+}, false);
+
+// Ổ gà: hố tròn sẫm màu, mép đất vỡ
+export const makePothole = () => canvasTex(128, 128, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  const gr = g.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2);
+  gr.addColorStop(0, 'rgba(18,14,10,1)'); gr.addColorStop(0.6, 'rgba(40,32,24,0.95)'); gr.addColorStop(0.85, 'rgba(90,74,56,0.8)'); gr.addColorStop(1, 'rgba(90,74,56,0)');
+  g.fillStyle = gr; g.beginPath();
+  for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.3) {
+    const r = w * (0.42 + Math.random() * 0.08);
+    g.lineTo(w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r);
+  }
+  g.fill();
+}, false);
+
+// Vòng cảnh báo đỏ trên mặt đường (đá sắp rơi xuống chỗ này)
+export const makeWarnRing = () => canvasTex(128, 128, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(255,40,40,1)'; g.lineWidth = 10;
+  g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 8, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = 'rgba(255,60,60,0.35)'; g.beginPath(); g.arc(w / 2, h / 2, w / 2 - 14, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.9)'; g.font = '900 64px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', w / 2, h / 2 + 4);
+}, false);

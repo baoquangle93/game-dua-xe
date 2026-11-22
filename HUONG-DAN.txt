@@ -40,6 +40,15 @@ TUỲ CHỌN Ở MENU
 - Đường có đồi lên xuống, một đoạn gồ ghề và 2 dốc nhảy.
 - Ăn mũi tên vàng tăng tốc ngay trước dốc nhảy để bay thật xa!
 
+CHƯỚNG NGẠI VẬT SỐNG (mới)
+- Trâu qua đường (biển báo TRÂU): đàn trâu đi ngang đường, đâm vào mất nhiều tốc độ.
+- Xe tải chạy chậm: phải vượt; thỉnh thoảng rơi thùng hàng xuống đường.
+- Đá lở (biển báo ĐÁ LỞ): vòng đỏ hiện trên đường là chỗ đá sắp rơi, tránh ra!
+- Chắn tàu (Phố Đêm): đèn đỏ nháy, cần chắn hạ là tàu sắp qua. Đâm vào tàu bị hất lùi.
+- Mưa rào (vạch xanh trên bản đồ nhỏ): đường trơn, khó lái.
+- Ổ gà: xe nảy lên và chậm lại.
+- Xu vàng: chạy qua để nhặt. Vòng lửa trên dốc nhảy: bay xuyên qua để tăng tốc + 5 xu.
+
 CHƯỚNG NGẠI VẬT (có đánh dấu chấm màu trên bản đồ nhỏ)
 - Thùng phuy (chấm đỏ)  : đâm vào xe bị bật lại, mất nhiều tốc độ.
 - Cọc tiêu (chấm cam)   : tông đổ được nhưng xe chậm lại.

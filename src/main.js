@@ -10,6 +10,7 @@ import { JOURNEY, newJourney, loadJourney, saveJourney, loadJourneyBest, saveJou
 import { input, setupInput } from './input.js';
 import { Smoke, EngineSound } from './effects.js';
 import { createObstacles } from './obstacles.js';
+import { createHazards } from './hazards.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -54,6 +55,7 @@ const track = createTrack(stage);
 buildTrackMeshes(scene, track, stage.theme);
 const world = buildWorld(scene, renderer, track, stage);
 const obstacles = createObstacles(scene, track, stage.plan);
+const hazards = createHazards(scene, track, stage.hazards, stage.jumps); // trâu, xe tải, đá lở, tàu hoả, mưa, ổ gà, xu, vòng lửa
 const smoke = new Smoke(scene);
 const engine = new EngineSound();
 setupInput();
@@ -141,6 +143,7 @@ function placeOnGrid() {
 let state = 'menu';         // menu | countdown | race | done
 let countdown = 0, raceTime = 0, goTimer = 0, menuT = 0, shake = 0, raceId = 0;
 let muted = false, finishShown = false;
+let coins = 0, hazardMsg = null, hazardMsgT = 0; // số xu nhặt được, thông báo va chạm
 let best = null;
 const BEST_KEY = settings.chang === 'hoang-hon' ? 'dua-xe-ky-luc' : 'dua-xe-ky-luc-' + settings.chang;
 if (!inJourney) try { best = Number(localStorage.getItem(BEST_KEY)) || null; } catch (e) { /* trình duyệt chặn lưu */ }
@@ -156,6 +159,7 @@ function startRace() {
   placeOnGrid();
   smoke.clear();
   obstacles.reset();
+  hazards.reset(); coins = 0; hazardMsg = null;
   state = 'countdown'; countdown = 3; raceTime = 0; goTimer = 0; finishShown = false;
   $('menu').classList.add('an-di');
   $('ket-qua').classList.add('an-di');
@@ -223,7 +227,7 @@ function showResults(id) {
   setTitle(rank === 1 ? '🏆' : '🏁', rank === 1 ? 'CHIẾN THẮNG!' : 'VỀ ĐÍCH!');
   $('kq-hang').textContent = `Hạng ${rank}/${racers.length}`;
   $('kq-thoi-gian').textContent = 'Thời gian: ' + fmt(t) + (newBest ? ' — kỷ lục mới!' : '');
-  $('kq-ky-luc').textContent = 'Kỷ lục: ' + fmt(best);
+  $('kq-ky-luc').textContent = 'Kỷ lục: ' + fmt(best) + ' · 🪙 Nhặt được ' + coins + ' xu';
   $('ket-qua').classList.remove('an-di');
 }
 
@@ -281,9 +285,10 @@ function showJourneyResult(rank, t) {
     $('nut-ht-phu').textContent = sub; journeyAction['nut-ht-phu'] = subFn;
   };
   $('kq-hang').textContent = 'Hạng ' + rank + '/' + racers.length;
-  $('kq-thoi-gian').textContent = 'Thời gian chặng: ' + fmt(t);
+  $('kq-thoi-gian').textContent = 'Thời gian chặng: ' + fmt(t) + ' · 🪙 ' + coins + ' xu';
   if (pass) {
     j.times[j.leg] = t;
+    j.coins = (j.coins || 0) + coins;
     j.leg++;
     if (j.leg >= total) {
       j.finished = true; j.open = false;
@@ -401,7 +406,8 @@ function updatePlayer(dt) {
   fs = r.vel.dot(fwd);
   lat.copy(r.vel).addScaledVector(fwd, -fs);
   r.slip = lat.length();
-  const grip = (r.oil > 0 ? 0.9 : hb ? 1.8 : offroad ? 4.5 : 8.5) * (r.air ? 0.1 : 1);
+  r.rain = hazards.inRain(near.idx);
+  const grip = (r.oil > 0 ? 0.9 : hb ? 1.8 : offroad ? 4.5 : 8.5) * (r.air ? 0.1 : 1) * (r.rain ? 0.5 : 1);
   r.vel.addScaledVector(lat, -Math.min(1, grip * dt));
 
   const drag = (offroad && !r.air ? 0.9 : 0.16) + (thr ? 0 : 0.3) + (hb ? 0.5 : 0);
@@ -446,6 +452,12 @@ function updatePlayer(dt) {
   }
 
   hitObstacles(r);
+  const ev = hazards.collide(r, near.idx, dt);
+  if (ev.shake) shake = Math.min(0.9, shake + ev.shake);
+  if (ev.msg) { hazardMsg = ev.msg; hazardMsgT = 1.4; }
+  if (ev.boost) r.boost = Math.max(r.boost, ev.boost);
+  if (ev.coins && drive) coins += ev.coins;
+  for (const p of ev.sparkle) for (let k = 0; k < 4; k++) smoke.spawn(p, k % 2 ? '#ffd166' : '#fff3b0', 0.5);
 
   // Chống kẹt: giữ ga mà xe đứng im (kẹt vào thùng phuy / tường) thì xe tự trượt dần về giữa đường
   r.stuck = thr && Math.abs(r.vel.dot(fwd)) < 3 ? (r.stuck || 0) + dt : 0;
@@ -592,6 +604,8 @@ function updateAI(a, dt) {
     else if (gap < -30) target *= Math.min(1.1, 1 + (-gap - 30) / 500);
   }
   if (a.finishTime != null) target *= 0.5;
+  target = Math.min(target, hazards.speedLimit(a.t, a.lane));
+  if (hazards.inRain(k)) target *= 0.94;
   const brk = target < a.speed - 3;
   a.speed += clamp(target - a.speed, -28 * dt, 14 * dt);
   const adv = (a.speed * dt) / track.segLen;
@@ -601,7 +615,7 @@ function updateAI(a, dt) {
   a.laneT += dt * a.laneSpeed;
   a.push *= 1 - Math.min(1, dt * 1.5);
   const wantLane = clamp(a.lane0 * 0.6 + Math.sin(a.laneT) * 2.8 + a.push, -ROAD_HALF + 1.8, ROAD_HALF - 1.8);
-  const av = avoidLane(a.t, wantLane);
+  const av = avoidLane(a.t, hazards.laneAdjust(a.t, wantLane));
   a.lane += (av.lane - a.lane) * Math.min(1, dt * (av.avoiding ? 4 : 1.5));
 
   const i = sampleAt(track, a.t, aiPoint);
@@ -616,6 +630,15 @@ function updateAI(a, dt) {
       a.lane = clamp(a.lane + side * (min - d), -ROAD_HALF + 1, ROAD_HALF - 1);
       nx = aiPoint.x + n.x * a.lane; nz = aiPoint.z + n.z * a.lane;
       a.speed *= 0.995;
+    }
+  }
+  for (const o of hazards.solids) {
+    const ox = nx - o.pos.x, oz = nz - o.pos.z, d = Math.hypot(ox, oz), min = a.rad + 0.4 + o.r;
+    if (d < min) {
+      const side = ox * n.x + oz * n.z >= 0 ? 1 : -1;
+      a.lane = clamp(a.lane + side * (min - d), -ROAD_HALF + 1, ROAD_HALF - 1);
+      nx = aiPoint.x + n.x * a.lane; nz = aiPoint.z + n.z * a.lane;
+      a.speed *= 0.99;
     }
   }
   const dx = nx - a.pos.x, dz = nz - a.pos.z;
@@ -698,6 +721,19 @@ let mmS = 1, mmOx = 0, mmOz = 0;
   const s0 = track.samples[0];
   g.fillStyle = '#ffffff'; g.fillRect(s0.x * mmS + mmOx - 6, s0.z * mmS + mmOz - 6, 12, 12);
   // Chấm nhỏ đánh dấu chướng ngại vật: đỏ = thùng phuy, cam = cọc tiêu, tím = dầu, vàng = tăng tốc
+  for (const m of hazards.marks) {
+    if (m.type === 'rain') {
+      g.beginPath();
+      for (let i = m.i0; i <= m.i1; i++) { const p = track.samples[i % track.N]; (i === m.i0 ? g.moveTo : g.lineTo).call(g, p.x * mmS + mmOx, p.z * mmS + mmOz); }
+      g.strokeStyle = 'rgba(80,170,255,.75)'; g.lineWidth = 12; g.stroke();
+    }
+  }
+  const markCol = { buffalo: '#c68b59', train: '#ffffff', rock: '#a0a0a0', pothole: '#7a5c3a' };
+  for (const m of hazards.marks) {
+    if (!markCol[m.type]) continue;
+    g.fillStyle = markCol[m.type]; g.strokeStyle = '#000'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(m.pos.x * mmS + mmOx, m.pos.z * mmS + mmOz, m.type === 'train' ? 6 : 5, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
   const dotCol = { barrel: '#ff4d4d', cone: '#ff9f43', oil: '#9b5de5', boost: '#ffd166' };
   for (const o of obstacles.items) {
     g.fillStyle = dotCol[o.type];
@@ -707,6 +743,10 @@ let mmS = 1, mmOx = 0, mmOz = 0;
 function drawMinimap() {
   mctx.clearRect(0, 0, MM, MM);
   mctx.drawImage(mmBg, 0, 0);
+  for (const tr of hazards.trucks) {
+    mctx.fillStyle = '#9aa0a6';
+    mctx.fillRect(tr.group.position.x * mmS + mmOx - 6, tr.group.position.z * mmS + mmOz - 6, 12, 12);
+  }
   for (const r of [...ais, player]) {
     mctx.beginPath();
     mctx.arc(r.pos.x * mmS + mmOx, r.pos.z * mmS + mmOz, r === player ? 11 : r.bike ? 6 : 8, 0, Math.PI * 2);
@@ -724,9 +764,13 @@ function updateHUD() {
   const kmh = Math.round(Math.abs(player.fs) * KMH);
   $('toc-do').textContent = kmh;
   $('thanh').style.width = Math.min(100, (kmh / (MAX_SPEED * KMH)) * 100) + '%';
+  $('xu').textContent = coins;
   const cb = $('canh-bao');
+  const warn = hazards.warning(player.idx);
   const [txt, color] = rescueMsg > 0 ? ['🛟 CỨU HỘ: ĐƯA XE VỀ ĐƯỜNG', '#8ecae6']
+    : hazardMsgT > 0 ? hazardMsg
     : player.wrong > 1 ? ['⚠ SAI HƯỚNG! (bấm R để quay lại)', '#ff4d6d']
+    : warn ? warn
     : player.oil > 0 ? ['🛢 TRƠN TRƯỢT!', '#c77dff']
     : player.boost > 0 ? ['⚡ TĂNG TỐC!', '#ffd166']
     : player.air ? ['✈ BAY!', '#8ecae6'] : ['', ''];
@@ -764,6 +808,13 @@ function simulate(dt) {
   updatePlayer(dt);
   for (const a of ais) updateAI(a, dt);
   separateAIs(dt);
+  if (state !== 'menu') hazards.update(dt, (t, want) => avoidLane(t, want, 60).lane);
+  for (const p of hazards.landed) {
+    const d = p.distanceTo(player.pos);
+    if (d < 55) shake = Math.min(0.9, shake + (1 - d / 55) * 0.7);
+    for (let k = 0; k < 6; k++) smoke.spawn(p, '#bfae96', 1.2);
+  }
+  hazardMsgT = Math.max(0, hazardMsgT - dt);
   smoke.update(dt);
   obstacles.update(dt);
 }
@@ -773,6 +824,7 @@ function present(dt) {
   updateCamera(dt);
   world.sun.position.copy(player.pos).addScaledVector(world.sunDir, 160);
   world.sun.target.position.copy(player.pos);
+  hazards.present(dt, camera, player.idx);
   sceneT += dt;
   world.update(dt, sceneT, player.pos, state === 'countdown' || (state === 'race' && raceTime < 4) || state === 'done');
   hudT -= dt;
@@ -820,7 +872,7 @@ frame();
 // Cho phép kiểm tra trạng thái game từ công cụ phát triển của trình duyệt
 window.__game = {
   get state() { return state; }, get quality() { return quality; }, player, ais, track, obstacles, settings, startRace, toMenu, applyQuality,
-  camera, scene, input, render,
+  camera, scene, input, render, hazards, get coins() { return coins; },
   // Chạy nhanh n bước (dùng khi kiểm thử tự động)
   step(n = 60, dt = STEP, draw = true) { for (let i = 0; i < n; i++) simulate(dt); present(dt); if (draw) render(); },
 };

@@ -3,8 +3,10 @@
 Game đua xe 3D chạy ngay trên trình duyệt, viết bằng **Three.js** và đóng gói bằng **Vite** (Node.js).
 Mọi hình ảnh (xe, đường đua, cây, núi, bầu trời) đều được dựng bằng code, không dùng file mô hình hay hình ảnh bên ngoài.
 
-## Tính năng (v0.5)
+## Tính năng (v0.6)
 
+- **Chướng ngại vật sống** theo từng chặng: đàn trâu qua đường, xe tải chạy chậm làm rơi thùng hàng, đá lở có vòng đỏ báo trước, chắn tàu hoả (xe đối thủ biết dừng chờ tàu), mưa rào làm đường trơn, ổ gà làm xe nảy lên
+- **Xu vàng** để nhặt và **vòng lửa** trên dốc nhảy (bay xuyên qua được tăng tốc + 5 xu)
 - **🏍️ Phượt Xuyên Việt** (chế độ mới): đi hành trình Hà Nội → Hạ Long → Đà Lạt → Sài Gòn. Mỗi chặng 2 vòng, về top 3 mới đi tiếp, cả hành trình có 2 lượt thử lại; đối thủ mạnh dần qua từng chặng. Lưu tiến độ và kỷ lục tổng thời gian. Huế, Hội An, Cần Thơ, Cà Mau sẽ mở ở các bản sau
 - **3 chặng đua**, mỗi chặng một hình dạng đường và một khung cảnh riêng:
   - Đồi Hoàng Hôn: rừng thông, núi tuyết, hồ nước, 2 ngôi làng, khinh khí cầu
@@ -51,6 +53,7 @@ Mỗi lần đẩy code lên nhánh `main`, GitHub Actions (`.github/workflows/d
 |---|---|
 | `src/main.js` | Vòng lặp game, vật lý xe, xe đối thủ, camera, HUD |
 | `src/track.js` | Hình dạng đường đua, mặt đường, bó vỉa, tường |
+| `src/hazards.js` | Chướng ngại vật động: trâu, xe tải, đá lở, tàu hoả, mưa, ổ gà, xu, vòng lửa |
 | `src/journey.js` | Hành trình Phượt Xuyên Việt: các điểm dừng, chặng, luật qua chặng |
 | `src/stages.js` | Các chặng đua: hình dạng đường, đồi, dốc nhảy, vị trí chướng ngại vật |
 | `src/scenery.js` | Bầu trời, ánh sáng và cảnh vật của từng chặng |
