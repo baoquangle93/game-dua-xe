@@ -75,6 +75,7 @@ export function buildWorld(scene, renderer, track, stage) {
   for (const p of track.samples) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
   const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
   const spread = Math.max(maxX - minX, maxZ - minZ) / 2 + 260;
+  const S = (stage.scale ?? 1.5) / 1.5, S2 = S * S; // đường lớn hơn thì cảnh vật trải rộng và nhiều hơn
 
   // Chỗ trống để đặt cây / nhà: không đè lên đường và không đè lên vật đã đặt trước
   const blocked = [];
@@ -339,9 +340,9 @@ export function buildWorld(scene, renderer, track, stage) {
     }
     // Rừng cây
     const spots = [];
-    for (let k = 0; k < 520; k++) { const s = randomSpot(WALL_DIST + BANK_W + 3, 560); if (s) spots.push(s); }
+    for (let k = 0; k < 520 * S2; k++) { const s = randomSpot(WALL_DIST + BANK_W + 3, 560 * S); if (s) spots.push(s); }
     plantTrees(spots, 0.58, ['#2f6b2a', '#3d7f33', '#4f8f3a', '#6a9b3f', '#3f6e2c', '#2f6b2a', '#c46a2b', '#d9a03a']);
-    mountains(20, 880, 1200, 150, 340, [0x4a4470, 0x8a6a9a, stage.noSnow ? 0x9d86ad : 0xfbeef0]);
+    mountains(20, 880 * S, 1200 * S, 150, 340, [0x4a4470, 0x8a6a9a, stage.noSnow ? 0x9d86ad : 0xfbeef0]);
     clouds(16, 0xfff1e6, 0x553322);
     // Khinh khí cầu bay lơ lửng
     const balloonCols = [['#ef476f', '#ffd166'], ['#06d6a0', '#118ab2'], ['#ff9f1c', '#ffffff'], ['#9b5de5', '#f15bb5'], ['#e63946', '#f1faee']];
@@ -358,7 +359,7 @@ export function buildWorld(scene, renderer, track, stage) {
       g.add(new THREE.Mesh(env, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, flatShading: true })));
       const basket = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 2.4), new THREE.MeshStandardMaterial({ color: 0x7a5230, roughness: 1 }));
       basket.position.y = -15; g.add(basket);
-      const a0 = (k / balloonCols.length) * Math.PI * 2, r = rand(250, 480), y0 = rand(70, 140);
+      const a0 = (k / balloonCols.length) * Math.PI * 2, r = rand(250, 480) * S, y0 = rand(70, 140);
       scene.add(g);
       updaters.push((dt, t) => {
         const a = a0 + t * 0.006;
@@ -426,7 +427,7 @@ export function buildWorld(scene, renderer, track, stage) {
     leafParts.push(new THREE.SphereGeometry(0.3, 6, 5).translate(1.9, 10.2, 0.3), new THREE.SphereGeometry(0.3, 6, 5).translate(1.4, 10.2, -0.3));
     const leafGeo = mergeGeometries(leafParts);
     const palmSpots = [];
-    for (let k = 0; k < 480; k++) { const s = randomSpot(WALL_DIST + BANK_W + 3, 560, onLand); if (s) palmSpots.push(s); }
+    for (let k = 0; k < 480 * S2; k++) { const s = randomSpot(WALL_DIST + BANK_W + 3, 560 * S, onLand); if (s) palmSpots.push(s); }
     const palmTrunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 1, flatShading: true }), palmSpots.length);
     const palmLeaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true }), palmSpots.length);
     palmSpots.forEach(([x, z], i) => {
@@ -437,7 +438,7 @@ export function buildWorld(scene, renderer, track, stage) {
     for (const m of [palmTrunks, palmLeaves]) { m.castShadow = true; m.receiveShadow = true; scene.add(m); }
     // Bụi cây thấp xen giữa
     const bushSpots = [];
-    for (let k = 0; k < 260; k++) { const s = randomSpot(WALL_DIST + BANK_W + 2, 520, onLand); if (s) bushSpots.push(s); }
+    for (let k = 0; k < 260 * S2; k++) { const s = randomSpot(WALL_DIST + BANK_W + 2, 520 * S, onLand); if (s) bushSpots.push(s); }
     const bushes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1.6, 0).translate(0, 0.6, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true }), bushSpots.length);
     bushSpots.forEach(([x, z], i) => {
       dummy.position.set(x, -0.35, z); dummy.rotation.set(0, Math.random() * 6, 0); dummy.scale.set(rand(0.8, 1.8), rand(0.6, 1.1), rand(0.8, 1.8)); dummy.updateMatrix();
@@ -486,8 +487,8 @@ export function buildWorld(scene, renderer, track, stage) {
       });
     }
     // Đảo xa ngoài biển và đồi xanh phía đất liền
-    mountains(7, 900, 1300, 60, 150, [0x3f6b48, 0x6f9a62, 0x8fb07a], [Math.PI * 1.15, Math.PI * 1.85], -20);
-    mountains(12, 900, 1250, 140, 300, [0x48704f, 0x7f9f76, 0x9fbf8a], [Math.PI * 0.05, Math.PI * 0.95]);
+    mountains(7, 900 * S, 1300 * S, 60, 150, [0x3f6b48, 0x6f9a62, 0x8fb07a], [Math.PI * 1.15, Math.PI * 1.85], -20);
+    mountains(12, 900 * S, 1250 * S, 140, 300, [0x48704f, 0x7f9f76, 0x9fbf8a], [Math.PI * 0.05, Math.PI * 0.95]);
     clouds(12, 0xffffff, 0x223344);
   }
 
@@ -508,7 +509,7 @@ export function buildWorld(scene, renderer, track, stage) {
     const winTex = makeWindows();
     const geos = [];
     const towerCols = ['#8a93a8', '#6f7891', '#9aa3b5', '#7d6f8f', '#5f7a8a', '#a39a8a'];
-    for (let k = 0; k < 340; k++) {
+    for (let k = 0; k < 340 * S2; k++) {
       const s = randomSpot(WALL_DIST + BANK_W + 10, spread * 1.05);
       if (!s) continue;
       let near = Infinity;
@@ -561,7 +562,7 @@ export function buildWorld(scene, renderer, track, stage) {
       board.position.set(0, 9, 0); board.rotation.y = -Math.PI / 2; f.add(board);
       for (const z of [-5, 5]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7, 0.4), metal); p.position.set(0.3, 3.5, z); f.add(p); }
     });
-    mountains(14, 1100, 1350, 120, 260, [0x10142a, 0x1c2140, 0x2a3050]);
+    mountains(14, 1100 * S, 1350 * S, 120, 260, [0x10142a, 0x1c2140, 0x2a3050]);
   }
 
   crowd.build(scene);

@@ -16,11 +16,13 @@
       <div class="o"><small>THỜI GIAN</small><b id="thoi-gian">0:00.00</b></div>
       <div class="o"><small>HẠNG</small><b id="hang">6/6</b></div>
       <div class="o"><small>XU</small><b id="xu">0</b></div>
+      <div class="o vat-pham" id="vat-pham"><small id="vp-ten">VẬT PHẨM</small><b id="vp-icon">—</b></div>
     </div>
     <div id="hud-chang"></div>
     <canvas id="minimap"></canvas>
     <button id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
     <div id="fps"></div>
+    <div id="chop"></div>
     <div id="dem-nguoc"></div>
     <div id="canh-bao"></div>
     <div id="dong-ho">
@@ -32,6 +34,7 @@
       <button data-key="right" aria-label="Rẽ phải">▶</button>
       <button data-key="down" aria-label="Phanh">⏬</button>
       <button data-key="up" aria-label="Ga">⏫</button>
+      <button id="nut-vat-pham" aria-label="Dùng vật phẩm">🎁</button>
     </div>
   </div>
 
@@ -55,6 +58,7 @@
         <kbd>Space</kbd><span>Phanh tay (drift)</span>
         <kbd>R</kbd><span>Cứu hộ: đưa xe về giữa đường</span>
         <kbd>M</kbd><span>Bật / tắt âm thanh</span>
+        <kbd>E / Shift</kbd><span>Dùng vật phẩm 🎁</span>
       </div>
       <div class="phim chu-giai">
         <span>🛢️</span><span><b>Thùng phuy</b>: đâm vào xe bị bật lại, mất tốc độ</span>
@@ -63,6 +67,7 @@
         <span>⚡</span><span><b>Mũi tên vàng</b>: chạy qua để tăng tốc</span>
       </div>
       </div>
+      <p class="nho moi-them"><b>Hành động:</b> 💣 bom mìn · ✈️ máy bay thả bom · 📸 camera bắn tốc độ (trên 150 km/h là 🚔 cảnh sát đuổi) · 🎁 hộp quà: nitro, khiên, thả bom, nam châm, sét — bấm <kbd>E</kbd> để dùng · tông mạnh để hạ gục đối thủ</p>
       <p class="nho moi-them"><b>Mới trên đường:</b> 🐃 trâu qua đường · 🚚 xe tải rơi thùng hàng · 🪨 đá lở (vòng đỏ báo trước) · 🚂 chắn tàu · 🌧 mưa rào trơn trượt · 🕳 ổ gà · 🪙 xu vàng · 🔥 vòng lửa trên dốc nhảy</p>
       <p class="nho">Điện thoại: dùng các nút trên màn hình · Qua dốc thật nhanh để bay lên!</p>
       <div class="tuy-chon">

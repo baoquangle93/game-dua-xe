@@ -3,8 +3,14 @@
 Game đua xe 3D chạy ngay trên trình duyệt, viết bằng **Three.js** và đóng gói bằng **Vite** (Node.js).
 Mọi hình ảnh (xe, đường đua, cây, núi, bầu trời) đều được dựng bằng code, không dùng file mô hình hay hình ảnh bên ngoài.
 
-## Tính năng (v0.6)
+## Tính năng (v0.7)
 
+- **Đường đua dài hơn ~33%** ở cả 3 chặng
+- 💣 **Bom mìn** trên đường (xe nào chạy qua cũng nổ tung, kể cả đối thủ) và ✈️ **máy bay thả bom** theo đợt, có vòng đỏ báo trước chỗ bom rơi
+- 📸 **Camera bắn tốc độ**: qua camera trên 150 km/h thì 🚔 **cảnh sát đuổi theo** (học từ Need for Speed): cắt đuôi được +15 xu, bị ép chạy chậm thì bị bắt, phạt dừng 2 giây
+- 🎁 **Hộp quà bí ẩn** (học từ Mario Kart): nitro, khiên, thả bom sau xe, nam châm hút xu, sét đánh cả đoàn; đứng cuối dễ được sét hơn. Bấm E / Shift / nút 🎁 để dùng
+- 💥 **Hạ gục đối thủ** (học từ Burnout): tông thật mạnh hoặc cho đối thủ dính bom => đối thủ nảy lên, xoay vòng, +10 xu
+- Tự cứu hộ khi xe chạy sai hướng hoặc bị ép kẹt không tiến được
 - **Chướng ngại vật sống** theo từng chặng: đàn trâu qua đường, xe tải chạy chậm làm rơi thùng hàng, đá lở có vòng đỏ báo trước, chắn tàu hoả (xe đối thủ biết dừng chờ tàu), mưa rào làm đường trơn, ổ gà làm xe nảy lên
 - **Xu vàng** để nhặt và **vòng lửa** trên dốc nhảy (bay xuyên qua được tăng tốc + 5 xu)
 - **🏍️ Phượt Xuyên Việt** (chế độ mới): đi hành trình Hà Nội → Hạ Long → Đà Lạt → Sài Gòn. Mỗi chặng 2 vòng, về top 3 mới đi tiếp, cả hành trình có 2 lượt thử lại; đối thủ mạnh dần qua từng chặng. Lưu tiến độ và kỷ lục tổng thời gian. Huế, Hội An, Cần Thơ, Cà Mau sẽ mở ở các bản sau
@@ -53,6 +59,7 @@ Mỗi lần đẩy code lên nhánh `main`, GitHub Actions (`.github/workflows/d
 |---|---|
 | `src/main.js` | Vòng lặp game, vật lý xe, xe đối thủ, camera, HUD |
 | `src/track.js` | Hình dạng đường đua, mặt đường, bó vỉa, tường |
+| `src/combat.js` | Bom mìn, máy bay thả bom, cảnh sát + camera bắn tốc độ, hộp quà, hạ gục |
 | `src/hazards.js` | Chướng ngại vật động: trâu, xe tải, đá lở, tàu hoả, mưa, ổ gà, xu, vòng lửa |
 | `src/journey.js` | Hành trình Phượt Xuyên Việt: các điểm dừng, chặng, luật qua chặng |
 | `src/stages.js` | Các chặng đua: hình dạng đường, đồi, dốc nhảy, vị trí chướng ngại vật |

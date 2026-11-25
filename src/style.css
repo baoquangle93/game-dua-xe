@@ -161,3 +161,14 @@ kbd { background: rgba(255,255,255,.14); border-radius: 6px; padding: 2px 8px; f
 .the p.tieu-de-tu-do { margin: 10px 0 2px; }
 .kq-icon { font-size: 44px; line-height: 1; margin-bottom: 4px; }
 .the p.moi-them { opacity: .85; margin: 4px 0; }
+
+/* Vật phẩm + chớp sáng khi sét đánh */
+.vat-pham { min-width: 96px; text-align: center; }
+.vat-pham b { font-size: 24px; }
+.vat-pham.co { border-color: #ffd166; box-shadow: 0 0 14px rgba(255,209,102,.55); animation: nhap-vp 1s ease-in-out infinite; }
+@keyframes nhap-vp { 50% { box-shadow: 0 0 4px rgba(255,209,102,.2); } }
+#chop { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#chop.chop { animation: chop .5s ease-out; }
+@keyframes chop { 0% { opacity: .85; } 100% { opacity: 0; } }
+#cham #nut-vat-pham { right: 22px; bottom: 120px; width: 70px; height: 70px; font-size: 30px; }
+@media (max-width: 560px) { .vat-pham { min-width: 0; } .vat-pham small { font-size: 9px; } .vat-pham b { font-size: 18px; } }

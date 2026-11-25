@@ -11,6 +11,8 @@ export const STAGES = {
     desc: 'Rừng thông, núi tuyết, làng nhỏ và khinh khí cầu lúc chiều tà. Đường dễ, hợp để làm quen.',
     banner: 'ĐỒI HOÀNG HÔN',
     theme: 'sunset',
+    scale: 2,      // độ lớn đường đua (càng lớn đường càng dài)
+    combat: { mines: [[160, -2], [160, 4], [385, 3], [540, -4], [540, 2], [700, 0], [860, -3]], cams: [100, 560], boxes: [70, 330, 600, 905] },
     hazards: {
       coins: [[60, 0, 'line'], [130, 3, 'zigzag'], [232, -3, 'line'], [292, 0, 'cross'], [362, -3, 'line'], [430, 3, 'zigzag'], [512, 0, 'line'], [612, -3, 'cross'], [682, 3, 'line'], [762, 0, 'zigzag'], [872, -3, 'line'], [940, 0, 'line']],
       trucks: [300, 800], buffalo: [245, 620], rocks: [310, 820], potholes: [120, 370, 680, 875],
@@ -42,6 +44,8 @@ export const STAGES = {
     desc: 'Chạy dọc bờ biển giữa trưa: hàng dừa, ô dù, hải đăng và thuyền buồm. Đường dài, nhiều dốc nhỏ.',
     banner: 'ĐƯỜNG ĐUA BIỂN XANH',
     theme: 'beach',
+    scale: 2,      // độ lớn đường đua (càng lớn đường càng dài)
+    combat: { mines: [[350, -2], [350, 4], [470, -3], [650, 2], [790, -4], [790, 3], [885, 0]], cams: [100, 560], boxes: [70, 280, 625, 905] },
     hazards: {
       coins: [[60, 0, 'line'], [165, -4, 'line'], [240, 0, 'zigzag'], [360, 3, 'line'], [425, 0, 'cross'], [540, -3, 'zigzag'], [635, 0, 'line'], [745, 3, 'line'], [830, 0, 'cross'], [935, -3, 'line']],
       trucks: [200, 700], buffalo: [300], potholes: [170, 480, 690, 880], rain: [[395, 565]],
@@ -73,6 +77,8 @@ export const STAGES = {
     desc: 'Đua giữa thành phố về đêm: nhà cao tầng sáng đèn, đèn đường và biển quảng cáo neon. Nhiều khúc cua nhất.',
     banner: 'ĐƯỜNG ĐUA PHỐ ĐÊM',
     theme: 'night',
+    scale: 2,      // độ lớn đường đua (càng lớn đường càng dài)
+    combat: { mines: [[110, -4], [260, 3], [340, 0], [470, 4], [610, -3], [740, 2], [890, -2]], cams: [100, 810], boxes: [70, 300, 565, 905] },
     hazards: {
       coins: [[60, 0, 'line'], [120, 3, 'line'], [240, -3, 'zigzag'], [312, 0, 'line'], [392, 3, 'cross'], [455, -3, 'line'], [525, 0, 'zigzag'], [595, 3, 'line'], [680, 0, 'cross'], [760, -3, 'line'], [870, 3, 'zigzag'], [940, 0, 'line']],
       trucks: [300, 750], train: [185], potholes: [320, 460, 600, 880], rain: [[380, 540]],

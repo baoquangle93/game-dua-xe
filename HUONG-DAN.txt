@@ -40,7 +40,16 @@ TUỲ CHỌN Ở MENU
 - Đường có đồi lên xuống, một đoạn gồ ghề và 2 dốc nhảy.
 - Ăn mũi tên vàng tăng tốc ngay trước dốc nhảy để bay thật xa!
 
-CHƯỚNG NGẠI VẬT SỐNG (mới)
+HÀNH ĐỘNG (mới nhất)
+- Bom mìn (quả cầu đen có gai, đèn đỏ nháy): chạy qua là nổ, xe bị hất tung. Đối thủ dính cũng vậy.
+- Máy bay thả bom: thỉnh thoảng bay ngang trên đầu, vòng đỏ trên đường là chỗ bom sắp rơi.
+- Camera bắn tốc độ (biển CAMERA): chạy qua trên 150 km/h thì cảnh sát đuổi theo.
+    Bỏ xa cảnh sát (hoặc cầm cự hết giờ) = +15 xu. Để cảnh sát ép mà chạy chậm = bị bắt, đứng yên 2 giây, mất 10 xu.
+- Hộp quà "?" cầu vồng: nhặt để nhận 1 vật phẩm, bấm E (hoặc Shift, hoặc nút 🎁 trên điện thoại) để dùng:
+    🚀 Nitro  🛡️ Khiên (không sợ bom, không bị bắt)  💣 Thả bom sau xe  🧲 Nam châm hút xu  ⚡ Sét đánh mọi đối thủ
+- Hạ gục: tông thật mạnh vào đối thủ / xe cảnh sát, hoặc cho họ dính bom của bạn => được thưởng xu.
+
+CHƯỚNG NGẠI VẬT SỐNG
 - Trâu qua đường (biển báo TRÂU): đàn trâu đi ngang đường, đâm vào mất nhiều tốc độ.
 - Xe tải chạy chậm: phải vượt; thỉnh thoảng rơi thùng hàng xuống đường.
 - Đá lở (biển báo ĐÁ LỞ): vòng đỏ hiện trên đường là chỗ đá sắp rơi, tránh ra!
@@ -63,6 +72,7 @@ Muốn đổi vị trí chướng ngại vật: sửa danh sách plan của từ
 - Space                : phanh tay (để drift khi vào cua)
 - R                    : cứu hộ, đưa xe về giữa đường (khi bị kẹt / quay ngược)
 - M                    : bật / tắt âm thanh
+- E hoặc Shift         : dùng vật phẩm
 - Điện thoại: dùng 4 nút trên màn hình.
 
 CẬP NHẬT LÊN GITHUB SAU KHI SỬA

@@ -18,13 +18,14 @@ function elevation(stage, i, N) {
   let h = 0;
   for (const [amp, freq, phase] of stage.hills) h += amp * (0.5 - 0.5 * Math.cos(freq * Math.PI * s + phase));
   h *= env;
-  for (const c of stage.rough) h += bump(i, c, 0.45, 2.2); // đoạn gồ ghề
-  for (const [c, height] of stage.jumps) h += bump(i, c, height, 6); // dốc nhảy
+  const k = 1.5 / (stage.scale ?? 1.5); // đường dài hơn thì gờ và dốc nhảy hẹp lại (tính theo số điểm) để giữ độ dốc
+  for (const c of stage.rough) h += bump(i, c, 0.45, 2.2 * k); // đoạn gồ ghề
+  for (const [c, height] of stage.jumps) h += bump(i, c, height, 6 * k); // dốc nhảy
   return h;
 }
 
 export function createTrack(stage) {
-  const pts = stage.control.map(([x, z]) => new THREE.Vector3(x * 1.5, 0, z * 1.5));
+  const pts = stage.control.map(([x, z]) => new THREE.Vector3(x * (stage.scale ?? 1.5), 0, z * (stage.scale ?? 1.5)));
   const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
   const samples = curve.getSpacedPoints(SAMPLES);
   samples.pop(); // điểm cuối trùng điểm đầu
