@@ -195,6 +195,7 @@ $('nut-dua-lai').addEventListener('click', startRace);
 $('nut-menu').addEventListener('click', toMenu);
 $('nut-am').addEventListener('click', toggleMute);
 $('nut-vat-pham').addEventListener('pointerdown', (e) => { e.preventDefault(); if (state === 'race') combat.useItem(); });
+$('nut-ten-lua').addEventListener('pointerdown', (e) => { e.preventDefault(); if (state === 'race') combat.fireRocket(); });
 function flashScreen() { const f = $('chop'); f.classList.remove('chop'); void f.offsetWidth; f.classList.add('chop'); }
 addEventListener('keydown', (e) => {
   if (e.code === 'Enter') {
@@ -203,6 +204,7 @@ addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyM') toggleMute();
   if ((e.code === 'KeyE' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && state === 'race') combat.useItem();
+  if (e.code === 'KeyF' && state === 'race' && !e.repeat) combat.fireRocket();
 });
 
 // Các nút tuỳ chọn ở menu (độ khó, đồ hoạ, hỗ trợ lái)
@@ -663,7 +665,8 @@ function updateAI(a, dt) {
   }
   const dx = nx - a.pos.x, dz = nz - a.pos.z;
   if (dx * dx + dz * dz > 1e-6) {
-    const h = Math.atan2(dx, dz);
+    const tH = Math.atan2(track.tangents[i].x, track.tangents[i].z);
+    const h = tH + clamp(wrapAngle(Math.atan2(dx, dz) - tH), -0.45, 0.45); // không quay ngang quá ~25° so với chiều đường
     const dh = wrapAngle(h - a.heading);
     a.heading += dh * Math.min(1, dt * 10);
     a.steer += (clamp(dh * 8, -1, 1) - a.steer) * Math.min(1, dt * 5);
@@ -793,8 +796,10 @@ function updateHUD() {
   $('toc-do').textContent = kmh;
   $('thanh').style.width = Math.min(100, (kmh / (MAX_SPEED * KMH)) * 100) + '%';
   $('xu').textContent = coins;
+  $('ten-lua').textContent = '🚀×' + combat.ammo;
+  $('o-ten-lua').classList.toggle('het', combat.ammo === 0);
   const held = combat.held;
-  $('vp-icon').textContent = combat.rolling ? ['🚀', '🛡️', '💣', '🧲', '⚡'][Math.floor(performance.now() / 90) % 5] : held ? ITEMS[held].icon : '—';
+  $('vp-icon').textContent = combat.rolling ? Object.values(ITEMS)[Math.floor(performance.now() / 90) % Object.keys(ITEMS).length].icon : held ? ITEMS[held].icon : '—';
   $('vp-ten').textContent = combat.rolling ? 'ĐANG CHỌN...' : held ? ITEMS[held].name + (isTouch ? '' : ' (E)') : 'VẬT PHẨM';
   $('vat-pham').classList.toggle('co', !!held && !combat.rolling);
   const cw = combat.warning();

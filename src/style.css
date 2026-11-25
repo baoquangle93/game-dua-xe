@@ -172,3 +172,5 @@ kbd { background: rgba(255,255,255,.14); border-radius: 6px; padding: 2px 8px; f
 @keyframes chop { 0% { opacity: .85; } 100% { opacity: 0; } }
 #cham #nut-vat-pham { right: 22px; bottom: 120px; width: 70px; height: 70px; font-size: 30px; }
 @media (max-width: 560px) { .vat-pham { min-width: 0; } .vat-pham small { font-size: 9px; } .vat-pham b { font-size: 18px; } }
+#o-ten-lua.het { opacity: .45; }
+#cham #nut-ten-lua { right: 100px; bottom: 120px; width: 70px; height: 70px; font-size: 30px; }

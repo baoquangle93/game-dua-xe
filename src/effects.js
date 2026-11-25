@@ -143,3 +143,16 @@ EngineSound.prototype.ding = function (pitch = 1) {
   const g = ctx.createGain(); g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
   o.connect(g).connect(ctx.destination); o.start(); o.stop(t + 0.2);
 };
+
+// Tiếng tên lửa phóng: tiếng xì rít ngắn
+EngineSound.prototype.whoosh = function () {
+  if (!this.ctx || this.muted) return;
+  const ctx = this.ctx, t = ctx.currentTime, len = ctx.sampleRate * 0.6;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2;
+  f.frequency.setValueAtTime(600, t); f.frequency.exponentialRampToValueAtTime(3000, t + 0.5);
+  const g = ctx.createGain(); g.gain.value = 0.25;
+  src.connect(f).connect(g).connect(ctx.destination); src.start();
+};

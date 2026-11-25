@@ -41,6 +41,8 @@ TUỲ CHỌN Ở MENU
 - Ăn mũi tên vàng tăng tốc ngay trước dốc nhảy để bay thật xa!
 
 HÀNH ĐỘNG (mới nhất)
+- Tên lửa (phím F, nút 🎯 trên điện thoại): có sẵn 2 quả mỗi cuộc đua, hộp quà cho thêm 3 quả.
+    Bắn trúng xe cảnh sát = xe lật nhào, hết bị đuổi, +20 xu. Không có cảnh sát thì tên lửa nhắm đối thủ phía trước.
 - Bom mìn (quả cầu đen có gai, đèn đỏ nháy): chạy qua là nổ, xe bị hất tung. Đối thủ dính cũng vậy.
 - Máy bay thả bom: thỉnh thoảng bay ngang trên đầu, vòng đỏ trên đường là chỗ bom sắp rơi.
 - Camera bắn tốc độ (biển CAMERA): chạy qua trên 150 km/h thì cảnh sát đuổi theo.
@@ -73,6 +75,7 @@ Muốn đổi vị trí chướng ngại vật: sửa danh sách plan của từ
 - R                    : cứu hộ, đưa xe về giữa đường (khi bị kẹt / quay ngược)
 - M                    : bật / tắt âm thanh
 - E hoặc Shift         : dùng vật phẩm
+- F                    : bắn tên lửa (tự bay tới xe cảnh sát / đối thủ phía trước)
 - Điện thoại: dùng 4 nút trên màn hình.
 
 CẬP NHẬT LÊN GITHUB SAU KHI SỬA

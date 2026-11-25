@@ -8,7 +8,8 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = THREE.MathUtils.clamp;
 
 export const ITEMS = {
-  nitro: { icon: '🚀', name: 'NITRO' },
+  nitro: { icon: '💨', name: 'NITRO' },
+  rockets: { icon: '🚀', name: '+3 TÊN LỬA' },
   shield: { icon: '🛡️', name: 'KHIÊN' },
   bomb: { icon: '💣', name: 'THẢ BOM' },
   magnet: { icon: '🧲', name: 'NAM CHÂM' },
@@ -61,11 +62,9 @@ export function createCombat(deps) {
         r.heading += rand(-0.5, 0.5) * k;
         say('💥 BỊ BOM NỔ TUNG!', '#ff4d6d', { shake: 0.6 * k });
       } else {
+        if (r === police && source === 'player') { destroyPolice(); continue; }
         wreck(r, 1.1 + k, 5 + 7 * k);
-        if (source === 'player') {
-          if (r === police) say('💥 HẠ GỤC XE CẢNH SÁT! +15 xu', '#ffd166', { coins: 15 });
-          else say('💥 HẠ GỤC ĐỐI THỦ! +10 xu', '#ffd166', { coins: 10 });
-        }
+        if (source === 'player') say('💥 HẠ GỤC ĐỐI THỦ! +10 xu', '#ffd166', { coins: 10 });
       }
     }
   }
@@ -242,11 +241,16 @@ export function createCombat(deps) {
     stripe.position.set(0, 0.68, 0.1); police.car.chassis.add(stripe);
     police.car.group.visible = false;
   }
+  const polPoint = new THREE.Vector3();
   function startChase() {
     Object.assign(police, {
       active: true, t: player.idx - 55, lane: latOf(player, player.idx), speed: Math.max(30, Math.abs(player.fs) * 0.9),
-      timer: 32, meter: 0, lostT: 0, wreck: 0, hopV: 0, hopY: 0, spinVis: 0, leaving: 0,
+      timer: 32, meter: 0, lostT: 0, wreck: 0, hopV: 0, hopY: 0, spinVis: 0, leaving: 0, destroyed: false,
     });
+    // Đặt xe ngay trên làn đường, quay đầu theo chiều chạy
+    const k = sampleAt(track, police.t, police.pos), t = tangents[k], n = normals[k];
+    police.pos.addScaledVector(n, police.lane);
+    police.heading = Math.atan2(t.x, t.z);
     police.car.group.visible = true;
   }
   function endChase(text, color, coins = 0) {
@@ -272,20 +276,30 @@ export function createCombat(deps) {
     p.t += (p.speed * dt) / segLen;
     const want = avoidLane(p.t, hazards.laneAdjust(p.t, d < 30 ? pLane : 0), 35).lane;
     p.lane += (want - p.lane) * Math.min(1, dt * 3);
-    const i = sampleAt(track, p.t, p.pos), n = normals[i];
-    let nx = p.pos.x + n.x * p.lane, nz = p.pos.z + n.z * p.lane;
+    // Lấy điểm giữa đường vào biến tạm (KHÔNG ghi đè p.pos), để hướng xe tính đúng theo chiều chạy
+    const i = sampleAt(track, p.t, polPoint), n = normals[i];
+    let nx = polPoint.x + n.x * p.lane, nz = polPoint.z + n.z * p.lane;
     for (const o of hazards.solids) {
       const ox = nx - o.pos.x, oz = nz - o.pos.z, dd = Math.hypot(ox, oz), min = 2.1 + o.r;
-      if (dd < min) { const s = ox * n.x + oz * n.z >= 0 ? 1 : -1; p.lane = clamp(p.lane + s * (min - dd), -ROAD_HALF + 1, ROAD_HALF - 1); nx = p.pos.x + n.x * p.lane; nz = p.pos.z + n.z * p.lane; }
+      if (dd < min) { const s = ox * n.x + oz * n.z >= 0 ? 1 : -1; p.lane = clamp(p.lane + s * (min - dd), -ROAD_HALF + 1, ROAD_HALF - 1); nx = polPoint.x + n.x * p.lane; nz = polPoint.z + n.z * p.lane; }
     }
     const dx = nx - p.pos.x, dz = nz - p.pos.z;
-    if (dx * dx + dz * dz > 1e-6) { const h = Math.atan2(dx, dz); p.heading += Math.atan2(Math.sin(h - p.heading), Math.cos(h - p.heading)) * Math.min(1, dt * 10); }
+    if (dx * dx + dz * dz > 1e-6) {
+      // Hướng xe theo chiều di chuyển, nhưng không lệch quá ~25° so với chiều đường (tránh xe quay ngang khi đứng yên đổi làn)
+      const tH = Math.atan2(tangents[i].x, tangents[i].z);
+      const h = tH + clamp(Math.atan2(Math.sin(Math.atan2(dx, dz) - tH), Math.cos(Math.atan2(dx, dz) - tH)), -0.45, 0.45);
+      p.heading += Math.atan2(Math.sin(h - p.heading), Math.cos(h - p.heading)) * Math.min(1, dt * 10);
+    }
     if (p.hopV || p.hopY) { p.hopV -= 28 * dt; p.hopY = (p.hopY || 0) + p.hopV * dt; if (p.hopY <= 0) { p.hopY = 0; p.hopV = 0; } }
     p.spinVis = p.wreck > 0 ? (p.spinVis || 0) + dt * 9 : Math.atan2(Math.sin(p.spinVis || 0), Math.cos(p.spinVis || 0)) * (1 - Math.min(1, dt * 5));
     p.pos.set(nx, heightAtT(track, p.t) + p.hopY, nz);
     p.pitch = -Math.atan(track.slopes[i]);
     p.fs = p.speed;
     applyVisuals(p, dt, true, false);
+    // Bị bắn hạ: lật nghiêng, bốc khói đen
+    p.flip = p.destroyed ? Math.min(Math.PI * 0.9, (p.flip || 0) + dt * 5) : 0;
+    p.car.group.rotation.z = p.flip;
+    if (p.destroyed && Math.random() < 0.7) smoke.spawn(p.pos.clone().setY(p.pos.y + 1.5), Math.random() < 0.3 ? '#ff7b00' : '#222222', 1.6);
 
     const dist = Math.hypot(p.pos.x - player.pos.x, p.pos.z - player.pos.z);
     sound.siren(Math.max(0, 1 - dist / 180));
@@ -329,7 +343,7 @@ export function createCombat(deps) {
   let held = null, roll = 0; // vật phẩm đang giữ, thời gian quay chọn
   function pickItem() {
     const rank = deps.rank();
-    const table = [['nitro', 30], ['shield', 20], ['bomb', 25], ['magnet', 15], ['zap', rank >= 4 ? 25 : 6]];
+    const table = [['nitro', 26], ['rockets', police.active ? 40 : 18], ['shield', 18], ['bomb', 20], ['magnet', 14], ['zap', rank >= 4 ? 25 : 6]];
     let s = Math.random() * table.reduce((a, b) => a + b[1], 0);
     for (const [k, w] of table) { if ((s -= w) < 0) return k; }
     return 'nitro';
@@ -358,6 +372,7 @@ export function createCombat(deps) {
     const it = held; held = null;
     const fx = Math.sin(player.heading), fz = Math.cos(player.heading);
     if (it === 'nitro') { player.boost = Math.max(player.boost, 2.8); say('🚀 NITRO!', '#ffd166'); }
+    if (it === 'rockets') { ammo += 3; say('🚀 +3 TÊN LỬA — bấm F để bắn', '#ffd166'); }
     if (it === 'shield') { player.shield = 7; say('🛡️ BẬT KHIÊN 7 GIÂY', '#8ecae6'); }
     if (it === 'magnet') { player.magnet = 8; say('🧲 NAM CHÂM HÚT XU', '#ffd166'); }
     if (it === 'bomb') {
@@ -374,6 +389,93 @@ export function createCombat(deps) {
       say('⚡ SÉT ĐÁNH ' + n + ' XE! +' + n * 3 + ' xu', '#fff3b0', { coins: n * 3 });
     }
     sound.ding(0.8);
+  }
+
+  // =================== TÊN LỬA TỰ DẪN (phím F / nút 🎯) ===================
+  // Ưu tiên bắn xe cảnh sát đang đuổi (tên lửa tự quay ra phía sau), không có thì nhắm đối thủ phía trước
+  let ammo = 2;
+  const rockets = [];
+  const rocketModel = (() => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.3, 10).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf1f1f1, metalness: 0.4, roughness: 0.3 }));
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 10).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.4 }));
+    nose.position.z = 0.87;
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.7, 8).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+    flame.position.z = -1.0;
+    g.add(body, nose, flame);
+    for (let k = 0; k < 4; k++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.32, 0.3), nose.material);
+      fin.position.set(Math.cos(k * Math.PI / 2) * 0.18, Math.sin(k * Math.PI / 2) * 0.18, -0.5); fin.rotation.z = k * Math.PI / 2;
+      g.add(fin);
+    }
+    return g;
+  })();
+  function pickTarget() {
+    if (police.active && police.leaving <= 0) return police;
+    const fx = Math.sin(player.heading), fz = Math.cos(player.heading);
+    let best = null, bestD = 170;
+    for (const a of ais) {
+      const dx = a.pos.x - player.pos.x, dz = a.pos.z - player.pos.z, d = Math.hypot(dx, dz);
+      if (d < bestD && (dx * fx + dz * fz) / (d || 1) > 0.35 && !(a.wreck > 0.3)) { best = a; bestD = d; }
+    }
+    return best;
+  }
+  function fireRocket() {
+    if (ammo <= 0) { say('🚀 HẾT TÊN LỬA — nhặt hộp quà để có thêm', '#b0b0b0'); return; }
+    ammo--;
+    const target = pickTarget();
+    const fx = Math.sin(player.heading), fz = Math.cos(player.heading);
+    const back = target === police; // cảnh sát ở phía sau => phóng ra từ đuôi xe
+    const mesh = rocketModel.clone(); scene.add(mesh);
+    const pos = player.pos.clone().add(new THREE.Vector3(fx * (back ? -2.6 : 2.6), 1.3, fz * (back ? -2.6 : 2.6)));
+    const dir = new THREE.Vector3(back ? -fx : fx, 0.15, back ? -fz : fz).normalize();
+    const vel = dir.multiplyScalar(Math.max(70, Math.abs(player.fs) + 50));
+    rockets.push({ mesh, pos, vel, target, life: 3.5 });
+    sound.whoosh();
+    say(target === police ? '🚀 BẮN TÊN LỬA VÀO XE CẢNH SÁT!' : target ? '🚀 BẮN TÊN LỬA VÀO ĐỐI THỦ!' : '🚀 BẮN TÊN LỬA!', '#ffd166');
+  }
+  const want = new THREE.Vector3();
+  function updateRockets(dt) {
+    for (let k = rockets.length - 1; k >= 0; k--) {
+      const r = rockets[k];
+      r.life -= dt;
+      const tg = r.target && (r.target !== police || police.active) ? r.target : null;
+      const speed = Math.min(130, r.vel.length() + 60 * dt);
+      if (tg) { // tự dẫn: quay dần về phía mục tiêu
+        want.set(tg.pos.x - r.pos.x, tg.pos.y + 0.9 - r.pos.y, tg.pos.z - r.pos.z).normalize();
+        r.vel.normalize().lerp(want, Math.min(1, dt * 5)).normalize();
+      } else r.vel.normalize();
+      r.vel.multiplyScalar(speed);
+      r.pos.addScaledVector(r.vel, dt);
+      r.mesh.position.copy(r.pos);
+      r.mesh.lookAt(r.pos.x + r.vel.x, r.pos.y + r.vel.y, r.pos.z + r.vel.z);
+      smoke.spawn(r.pos, Math.random() < 0.5 ? '#d8d8d8' : '#ffb347', 0.45);
+      // Trúng xe nào (cảnh sát hoặc đối thủ) thì nổ; hết nhiên liệu cũng nổ
+      const victims = [...ais, ...(police.active ? [police] : [])];
+      const hit = victims.find((v) => Math.hypot(v.pos.x - r.pos.x, v.pos.z - r.pos.z) < 2.4 && Math.abs(v.pos.y + 0.8 - r.pos.y) < 2.5);
+      const ground = heights[wrap(nearIdx(r.pos))];
+      if (hit || r.life <= 0 || r.pos.y < ground) {
+        blast(r.pos.clone().setY(Math.max(ground, r.pos.y - 0.8)), 5, 'player');
+        scene.remove(r.mesh); rockets.splice(k, 1);
+      }
+    }
+  }
+  // Chỉ số điểm đường gần một vị trí (tìm quanh vị trí người chơi cho nhanh)
+  function nearIdx(pos) {
+    let best = player.idx, bd = Infinity;
+    for (let o = -80; o <= 80; o += 2) {
+      const k = wrap(player.idx + o), s = samples[k], d = (s.x - pos.x) ** 2 + (s.z - pos.z) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  }
+  // Xe cảnh sát trúng tên lửa / bom của bạn: lật tung, bốc khói, cuộc truy đuổi kết thúc
+  function destroyPolice() {
+    if (!police.active || police.destroyed) return;
+    police.destroyed = true;
+    police.wreck = 3.5; police.hopV = 11; police.speed *= 0.2;
+    police.leaving = 3.5;
+    say('💥 BẮN HẠ XE CẢNH SÁT! +20 xu', '#ffd166', { coins: 20 });
   }
 
   // =================== Va chạm / hiệu ứng lên xe người chơi (gọi mỗi bước vật lý) ===================
@@ -415,8 +517,8 @@ export function createCombat(deps) {
   function warning() {
     if (player.busted > 0) return ['🚔 BỊ CẢNH SÁT GIỮ LẠI...', '#ff4d6d'];
     if (police.active && police.leaving <= 0) {
-      if (police.meter > 0.3) return ['🚔 CẢNH SÁT ÁP SÁT — TĂNG TỐC NGAY!', '#ff4d6d'];
-      return ['🚔 CẢNH SÁT ĐANG DÍ — CÒN ' + Math.ceil(police.timer) + 's', '#8ecae6'];
+      if (police.meter > 0.3) return ['🚔 CẢNH SÁT ÁP SÁT — TĂNG TỐC' + (ammo > 0 ? ' HOẶC BẮN TÊN LỬA (F)!' : ' NGAY!'), '#ff4d6d'];
+      return ['🚔 CẢNH SÁT ĐANG DÍ — CÒN ' + Math.ceil(police.timer) + 's' + (ammo > 0 ? ' · bấm F bắn tên lửa!' : ''), '#8ecae6'];
     }
     if (raid.on) return ['✈️ MÁY BAY NÉM BOM — NÉ VÒNG ĐỎ!', '#ff9f43'];
     return null;
@@ -425,7 +527,8 @@ export function createCombat(deps) {
   return {
     marks, raid, plane, mines, ITEMS,
     get held() { return held; }, get rolling() { return roll > 0; },
-    useItem, ram, warning,
+    useItem, ram, warning, fireRocket,
+    get ammo() { return ammo; },
     // Cho xe đối thủ biết chỗ có mìn để lách
     aiSolids() { return mines.filter((m) => m.hidden <= 0 && m.arm <= 0).map((m) => ({ pos: m.pos, r: 1.4 })); },
     update(dt, state, drive) {
@@ -436,6 +539,7 @@ export function createCombat(deps) {
       if (racing && drive) checkCams(dt, Math.abs(player.fs) * deps.kmh);
       updatePolice(dt);
       updateBoxes(dt);
+      updateRockets(dt);
       affectPlayer(dt, drive);
     },
     drain() { const out = queue.splice(0); return out; },
@@ -448,7 +552,9 @@ export function createCombat(deps) {
       }
       for (const b of boxes) { b.hidden = 0; b.mesh.visible = true; }
       police.active = false; police.car.group.visible = false; sound.siren(0);
-      held = null; roll = 0; lastIdx = -1;
+      held = null; roll = 0; lastIdx = -1; ammo = 2;
+      for (const r of rockets) scene.remove(r.mesh); rockets.length = 0;
+      police.car.group.rotation.z = 0; police.flip = 0; police.destroyed = false;
       Object.assign(player, { shield: 0, magnet: 0, busted: 0 });
       queue.length = 0;
     },

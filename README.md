@@ -3,8 +3,10 @@
 Game đua xe 3D chạy ngay trên trình duyệt, viết bằng **Three.js** và đóng gói bằng **Vite** (Node.js).
 Mọi hình ảnh (xe, đường đua, cây, núi, bầu trời) đều được dựng bằng code, không dùng file mô hình hay hình ảnh bên ngoài.
 
-## Tính năng (v0.7)
+## Tính năng (v0.8)
 
+- 🚀 **Tên lửa tự dẫn** (phím F / nút 🎯): mỗi cuộc đua có sẵn 2 quả, hộp quà cho thêm 3 quả. Tự bay tới xe cảnh sát đang đuổi (kể cả phía sau), không có cảnh sát thì nhắm đối thủ phía trước. Bắn hạ xe cảnh sát: xe lật ngửa, bốc khói, hết bị truy đuổi, +20 xu
+- Sửa lỗi xe cảnh sát chạy ngang: giờ luôn chạy cùng chiều đường
 - **Đường đua dài hơn ~33%** ở cả 3 chặng
 - 💣 **Bom mìn** trên đường (xe nào chạy qua cũng nổ tung, kể cả đối thủ) và ✈️ **máy bay thả bom** theo đợt, có vòng đỏ báo trước chỗ bom rơi
 - 📸 **Camera bắn tốc độ**: qua camera trên 150 km/h thì 🚔 **cảnh sát đuổi theo** (học từ Need for Speed): cắt đuôi được +15 xu, bị ép chạy chậm thì bị bắt, phạt dừng 2 giây
